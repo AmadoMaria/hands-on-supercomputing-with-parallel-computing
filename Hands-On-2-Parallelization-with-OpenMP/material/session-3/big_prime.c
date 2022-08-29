@@ -36,7 +36,7 @@ int is_prime(big_integer n)
       if(id == 0)
       {
         i = 3;
-        while(result && i <= (int)sq_root/4){
+        while(result && i <= (big_integer)sq_root/4){
           result = n % i != 0;
           i += 2;
         }

@@ -11,6 +11,7 @@ HowToExecute:   ./mm    <size>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 void initializeMatrix(int *matrix, int size)
 {
@@ -33,6 +34,11 @@ void printMatrix(int *matrix, int size)
 int main (int argc, char **argv)
 {
 
+ double t1, t2;
+ int max_thread;
+ char filename[]="plot_";
+ FILE *fp;
+
  int size = atoi(argv[1]);  
  int i, j, k;
 
@@ -42,16 +48,26 @@ int main (int argc, char **argv)
 
  initializeMatrix(A, size);
  initializeMatrix(B, size);
+ max_thread = omp_get_max_threads();
 
- for(i = 0; i < size; i++)
-  for(j = 0; j < size; j++)
-    for(k = 0; k < size; k++)
-       C[i * size + j] += A[i * size + k] * B[k * size + j];
-
- printMatrix(A,size);
- printMatrix(B,size);
- printMatrix(C,size);
-
+ sprintf(filename, "%d.txt", max_thread);
+ fp=fopen(filename, "a");
+//  printf("max threads: %d\n", max_thread);
+ t1 = omp_get_wtime();
+ #pragma omp parallel for private(i, j, k)
+    
+    for(i = 0; i < size; i++)
+      for(j = 0; j < size; j++)
+        for(k = 0; k < size; k++)
+          C[i * size + j] += A[i * size + k] * B[k * size + j];
+ 
+ t2 = omp_get_wtime();
+ printf("%d\t%f\n", size, t2-t1);
+ fprintf(fp, "%d\t%f\n", size, t2-t1);
+//  printMatrix(A,size);
+//  printMatrix(B,size);
+//  printMatrix(C,size);
+ fclose(fp);
  return 0;
 
 }

@@ -28,6 +28,7 @@ double integral(double a, double b, int n)
 
    h = (b - a) / n;
 
+   #pragma omp paralllel for reduction(+: s)
    for (i = 0; i < n; i++)
    {
       s += f(a + h * (i + 0.5));
@@ -39,8 +40,11 @@ double integral(double a, double b, int n)
 
 int main(int argc, char *argv[])
 {
+   float result;
+
    int steps = atoi(argv[1]);
    
+   #pragma omp critical
    result = integral(0, 1, steps);
   
    printf("%f\n", result);

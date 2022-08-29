@@ -12,6 +12,7 @@ HowToExecute:   OMP_NUM_THREADS=${num_threads} ./image
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <omp.h>
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -115,12 +116,14 @@ int write_ppm_image(char *file_name, struct pixel **img, int width, int height)
 int apply_filter(int steps, int radius, struct pixel **src, struct pixel **dst, int width, int height)
 {
   int i, j, k, l, s, total;
-
+  float t1, t2;
   struct
   {
     int r, g, b;
   } result;
   int **filter_block, filter_factor;
+  FILE *fp;
+  fp=fopen("time_execution.txt", "a");
 
   if ((filter_block = (int **)malloc(sizeof(int *) * (2 * (radius + 1)))) == NULL)
   {
@@ -132,6 +135,11 @@ int apply_filter(int steps, int radius, struct pixel **src, struct pixel **dst, 
     printf("failed allocating memory for the filter block\n");
     exit(-1);
   }
+  
+  
+
+  t1 = omp_get_wtime();
+  printf("threads: %d\n", omp_get_max_threads());
   for (i = 1; i < 2 * (radius + 1); i++)
     filter_block[i] = filter_block[i - 1] + 2 * (radius + 1);
 
@@ -139,6 +147,7 @@ int apply_filter(int steps, int radius, struct pixel **src, struct pixel **dst, 
     for (j = -radius; j <= radius; j++)
       filter_block[i + radius][j + radius] = (radius - abs(i)) * (radius - abs(i)) + (radius - abs(j)) * (radius - abs(j)) + 1;
 
+  #pragma omp parallel for private(s, i, j, l)
   for (s = 0; s < steps; s++)
   {
     for (i = 0; i < width; i++)
@@ -149,8 +158,10 @@ int apply_filter(int steps, int radius, struct pixel **src, struct pixel **dst, 
         result.g = 0;
         result.b = 0;
         total = 0;
+
         for (k = max(0, i - radius); k <= min(width - 1, i + radius); k++)
         {
+          #pragma omp parallel for reduction(+: total)
           for (l = max(0, j - radius); l <= min(height - 1, j + radius); l++)
           {
             filter_factor = filter_block[k - i + radius][l - j + radius];
@@ -158,6 +169,7 @@ int apply_filter(int steps, int radius, struct pixel **src, struct pixel **dst, 
             result.g += src[k][l].g * filter_factor;
             result.b += src[k][l].b * filter_factor;
             total += filter_factor;
+            
           }
         }
         result.r /= total;
@@ -167,12 +179,20 @@ int apply_filter(int steps, int radius, struct pixel **src, struct pixel **dst, 
         dst[i][j].g = result.g;
         dst[i][j].b = result.b;
       }
-    }
+
+    } 
+    t2 = omp_get_wtime();
+
+    
+    
     if (s + 1 < steps)
       memcpy(src[0], dst[0], width * height * sizeof(struct pixel));
   }
   free(filter_block[0]);
   free(filter_block);
+  printf("time: %f\n", t2-t1);
+  fprintf(fp, "%s\t%f\n", "s, j, i, l and reduction s", t2-t1);
+  fclose(fp);
   return 0;
 }
 

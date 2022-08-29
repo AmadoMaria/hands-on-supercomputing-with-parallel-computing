@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 {
   int n = atoi(argv[1]);
   int block_size = atoi(argv[2]);
-  int matrix[SIZE_MATRIX][SIZE_MATRIX], k1 = 10, k2 = 20;
+  int matrix[SIZE_MATRIX][SIZE_MATRIX], k1 = 10, k2 = 20, k3 = 30, k4 = 40, k5=50;
   int i, j, row, column;
 
   for(i = 0; i < n; i++)
@@ -50,6 +50,27 @@ int main(int argc, char **argv)
       for(row = 0; row < n; row++)
         for(column = block_size; column < 2 * block_size; column++)
           matrix[row][column] *= k2;
+    }
+
+    if(id == 2)
+    {
+      for(row = 0; row < n; row++)
+        for(column = 2 * block_size; column < 3 * block_size; column++)
+          matrix[row][column] *= k3;
+    }
+
+    if(id == 3)
+    {
+      for(row = 0; row < n; row++)
+        for(column = 3 * block_size; column < 4 * block_size; column++)
+          matrix[row][column] *= k4;
+    }
+
+    if(id == 4)
+    {
+      for(row = 0; row < n; row++)
+        for(column = 4 * block_size; column < 5 * block_size; column++)
+          matrix[row][column] *= k4;
     }
   
   }

@@ -1,5 +1,5 @@
 #!/bin/sh
-echo -n "" > time.txt
+echo -n "" > time.txt #cleaning .txt file
 for i in $(seq 1 30)
     do
     printf "$i - threads\n"

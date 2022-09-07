@@ -34,6 +34,7 @@ int read_ppm_image(char *file_name, struct pixel ***img, int *out_width, int *ou
   int rgb_max, actual_width, actual_height, i, j;
 
   fd = fopen(file_name, "r");
+  
   if (fd == NULL)
   {
     printf("failed opening file %s\n", file_name);

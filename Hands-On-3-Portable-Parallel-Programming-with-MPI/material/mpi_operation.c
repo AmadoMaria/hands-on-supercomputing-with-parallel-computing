@@ -2,22 +2,22 @@
 #include <mpi.h>
 #define SIZE 12
 
-int getOperationResult(char operation, int array[SIZE])
+int getOperationResult(int operation, int array[SIZE])
 {
     int value;
     switch (operation)
     {
-    case '+':
+    case 1:
         value = 0;
         for (int i = 0; i < SIZE; i++)
             value += array[i];
         break;
-    case '-':
+    case 2:
         value = 0;
         for (int i = 0; i < SIZE; i++)
             value -= array[i];
         break;
-    case '*':
+    case 3:
         value = 1;
         for (int i = 0; i < SIZE; i++)
             value *= array[i];
@@ -26,12 +26,25 @@ int getOperationResult(char operation, int array[SIZE])
     return value;
 }
 
+char getOperation(int id)
+{
+    switch (id)
+    {
+    case 1:
+        return '+';
+    case 2:
+        return '-';
+    case 3:
+        return '*';
+    default:
+        break;
+    }
+}
+
 int main(int argc, char **argv)
 {
     int i, sum = 0, subtraction = 0, mult = 1, result, value;
     int array[SIZE];
-    char ops[] = {'+', '-', '*'};
-    char operationsRec;
     int numberProcess, id, to, from, tag = 1000;
 
     MPI_Init(&argc, &argv);
@@ -50,25 +63,28 @@ int main(int argc, char **argv)
         for (to = 1; to < numberProcess; to++)
         {
             MPI_Send(&array, SIZE, MPI_INT, to, tag, MPI_COMM_WORLD);
-            MPI_Send(&ops[to - 1], 1, MPI_CHAR, to, tag, MPI_COMM_WORLD);
         }
 
-        for (to = 1; to < numberProcess; to++)
+        for (from = 1; from < numberProcess; from++)
         {
-            MPI_Recv(&result, 1, MPI_INT, to, tag, MPI_COMM_WORLD, &status);
-            MPI_Recv(&operationsRec, 1, MPI_CHAR, to, tag, MPI_COMM_WORLD, &status);
-            printf("(%c) = %d\n", operationsRec, result);
+            MPI_Recv(&result, 1, MPI_INT, from, tag, MPI_COMM_WORLD, &status);
+            char operation = getOperation(from);
+            printf("(%c) = %d\n", operation, result);
         }
     }
     else
     {
         MPI_Recv(&array, SIZE, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
-        MPI_Recv(&operationsRec, 1, MPI_CHAR, 0, tag, MPI_COMM_WORLD, &status);
 
-        value = getOperationResult(operationsRec, array);
+        for (int j = 1; j < numberProcess; j++)
+        {
+            if (id == j)
+            {
+                value = getOperationResult(id, array);
+            }
+        }
 
         MPI_Send(&value, 1, MPI_INT, 0, tag, MPI_COMM_WORLD);
-        MPI_Send(&operationsRec, 1, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
     }
 
     MPI_Finalize();

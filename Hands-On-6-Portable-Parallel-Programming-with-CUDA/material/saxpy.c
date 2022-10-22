@@ -1,59 +1,62 @@
 /****************************************************************************80
-*  Code: 
-*   saxpy.c
-*
-*  Purpose:
-*   Implements in C the simple SAXPY stands for Single-Precision.
-*
-*  Modified:
-*   May 08 2022 17:28 
-*
-*  Author:
-*    Murilo Boratto  < muriloboratto 'at' fieb.org.br >
-*
-*  HowtoCompile:
-*    gcc saxpy.c -o saxpy 
-*   
-*  HowtoExecute:
-*    ./saxpy <size>
-*    ./saxpy  10
-*
-*******************************************************************************/
+ *  Code:
+ *   saxpy.c
+ *
+ *  Purpose:
+ *   Implements in C the simple SAXPY stands for Single-Precision.
+ *
+ *  Modified:
+ *   May 08 2022 17:28
+ *
+ *  Author:
+ *    Murilo Boratto  < muriloboratto 'at' fieb.org.br >
+ *
+ *  HowtoCompile:
+ *    gcc saxpy.c -o saxpy
+ *
+ *  HowtoExecute:
+ *    ./saxpy <size>
+ *    ./saxpy  10
+ *
+ *******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
+// #include <cuda.h>
 
-void saxpy(int n,  float *x, float *y){
+void saxpy(int n, float *x, float *y)
+{
 
-for (int i=0; i < n ; ++i)
- y[i] = x[i] + y[i];
-
+  for (int i = 0; i < n; ++i)
+    y[i] = x[i] + y[i];
 }
 
-void printVector(float *vector, int n){
+void printVector(float *vector, int n)
+{
 
-for (int i=0; i < n ; ++i)
- printf("%1.0f\t", vector[i]);
+  int i;
+  for (i = 0; i < n; ++i)
+    printf("%1.0f\t", vector[i]);
 
- printf("\n\n");
-
+  printf("\n\n");
 }
 
-void generateVector(float *vector, int n){
-
-for (int i=0; i < n ; ++i)
- vector[i] = i + 1;
-
+void generateVector(float *vector, int n)
+{
+  int i;
+  for (i = 0; i < n; ++i)
+    vector[i] = i + 1;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 
-  int n = atoi(argv[1]);   
-  float *x,*y;
+  int n = atoi(argv[1]);
+  float *x, *y;
 
-  x = (float*) malloc(sizeof(float) * n);
-  y = (float*) malloc(sizeof(float) * n);
- 
+  x = (float *)malloc(sizeof(float) * n);
+  y = (float *)malloc(sizeof(float) * n);
+
   generateVector(x, n);
   printVector(x, n);
 
@@ -62,11 +65,9 @@ int main(int argc, char *argv[]){
 
   saxpy(n, x, y);
   printVector(y, n);
- 
+
   free(x);
   free(y);
 
   return 0;
-
 }
-

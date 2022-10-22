@@ -22,13 +22,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-// #include <cuda.h>
+#include <cuda.h>
 
-void saxpy(int n, float *x, float *y)
+__global__ void saxpy(int n, float *x, float *y)
 {
 
-  int i;
-  for (i = 0; i < n; ++i)
+  int i = threadIdx.x;
+  if (i < n)
     y[i] = x[i] + y[i];
 }
 
@@ -51,9 +51,12 @@ void generateVector(float *vector, int n)
 
 int main(int argc, char *argv[])
 {
-
   int n = atoi(argv[1]);
   float *x, *y;
+  float *xd, *yd;
+
+  cudaMalloc((void **)&xd, sizeof(float) * n);
+  cudaMalloc((void **)&yd, sizeof(float) * n);
 
   x = (float *)malloc(sizeof(float) * n);
   y = (float *)malloc(sizeof(float) * n);
@@ -64,11 +67,21 @@ int main(int argc, char *argv[])
   generateVector(y, n);
   printVector(y, n);
 
-  saxpy(n, x, y);
+  cudaMemcpy(xd, x, sizeof(float) * n, cudaMemcpyHostToDevice);
+  cudaMemcpy(yd, x, sizeof(float) * n, cudaMemcpyHostToDevice);
+
+  int NUMBER_OF_BLOCKS = 1;
+  int NUMBER_OF_THREADS_PER_BLOCKS = n;
+
+  saxpy<<<NUMBER_OF_BLOCKS, NUMBER_OF_THREADS_PER_BLOCKS>>>(n, xd, yd);
+
+  cudaMemcpy(y, yd, sizeof(float) * (n), cudaMemcpyDeviceToHost);
   printVector(y, n);
 
   free(x);
   free(y);
+  cudaFree(xd);
+  cudaFree(yd);
 
   return 0;
 }

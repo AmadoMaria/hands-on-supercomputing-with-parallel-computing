@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 #include <cuda.h>
 
 // 97 to 122 use only lowercase letters

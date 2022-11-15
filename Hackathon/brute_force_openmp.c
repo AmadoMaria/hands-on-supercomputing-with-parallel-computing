@@ -50,23 +50,28 @@ void bruteForce(char *pass)
 
     long long int max = my_pow(base, size);
     char s[MAXIMUM_PASSWORD];
+    int go = 1;
 
+#pragma omp parallel for shared(go)
     for (j = 0; j < max; j++)
     {
-        if (j == pass_decimal)
+        if (go)
         {
-            printf("Found password!\n");
-            int index = 0;
-
-            printf("Password in decimal base: %lli\n", j);
-            while (j > 0)
+            if (j == pass_decimal)
             {
-                s[index++] = 'a' + j % base - 1;
-                j /= base;
+                go = 0;
+                printf("Found password!\n");
+                int index = 0;
+
+                printf("Password in decimal base: %lli\n", j);
+                while (j > 0)
+                {
+                    s[index++] = 'a' + j % base - 1;
+                    j /= base;
+                }
+                s[index] = '\0';
+                printf("Found password: %s\n", s);
             }
-            s[index] = '\0';
-            printf("Found password: %s\n", s);
-            break;
         }
     }
 }

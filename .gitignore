@@ -74,3 +74,9 @@ dkms.conf
 *.vscode/
 
 *obj
+
+Hackathon/tes.c
+Hackathon/bruteForce
+Hands-On-6-Portable-Parallel-Programming-with-CUDA/material/saxpy
+Hackathon/bruteForce
+.gitignore

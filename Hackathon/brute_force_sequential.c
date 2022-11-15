@@ -1,7 +1,8 @@
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 
 // 97 to 122 use only lowercase letters
 // 65 to 90 use only capital letters
@@ -11,13 +12,16 @@
 #define END_CHAR 122
 #define MAXIMUM_PASSWORD 20
 
-long long my_pow(long long x, int y)
+void my_pow(long long x, int y, long long *result)
 {
+  long long i;
   long long res = 1;
-  if (y == 0)
-    return res;
-  else
-    return x * my_pow(x, y - 1);
+  for (i = 0; i < y; i++)
+  {
+    res *= x;
+  }
+
+  *result = res;
 }
 
 void bruteForce(char *pass)
@@ -41,9 +45,16 @@ void bruteForce(char *pass)
     pass_b26[i] = (int)pass[i] - START_CHAR + 1;
 
   for (int i = size - 1; i > -1; i--)
-    pass_decimal += (long long int)pass_b26[i] * my_pow(base, i);
+  {
+    long long pass_decimal_pow;
+    my_pow(base, i, &pass_decimal_pow);
+    pass_decimal += (long long int)pass_b26[i] * pass_decimal_pow;
+  }
 
-  long long int max = my_pow(base, size);
+  long long int max_pow;
+  my_pow(base, size, &max_pow);
+  long long int max = max_pow;
+
   char s[MAXIMUM_PASSWORD];
 
   for (j = 0; j < max; j++)

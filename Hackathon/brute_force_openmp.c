@@ -15,10 +15,14 @@
 long long my_pow(long long x, int y)
 {
     long long res = 1;
-    if (y == 0)
-        return res;
-    else
-        return x * my_pow(x, y - 1);
+    long long i;
+
+    for (i = 0; i < y; i++)
+    {
+        res *= x;
+    }
+
+    return res;
 }
 
 void bruteForce(char *pass)

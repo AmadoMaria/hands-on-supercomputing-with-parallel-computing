@@ -72,3 +72,5 @@ dkms.conf
 *.eps
 
 *.vscode/
+
+*obj

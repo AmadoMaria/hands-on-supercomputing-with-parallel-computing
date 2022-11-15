@@ -1,8 +1,7 @@
-#include
-#include
-#include
-#include
-#include
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
 // 97 to 122 use only lowercase letters
 // 65 to 90 use only capital letters

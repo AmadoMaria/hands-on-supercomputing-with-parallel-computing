@@ -39,9 +39,9 @@ mpi(){
 
 openmpi(){
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
-    echo "num_process;time;" >> ./${dir}/openmpi
+    echo "num_threads;num_process;time;" >> ./${dir}/openmpi
     openmpi=$(OMP_NUM_THREADS=$1 mpirun -np $2 ./bruteForce-openmpi $3 | grep "seconds" | cut -d " " -f 1)
-    echo "${1};${2};" >> ./${dir}/openmpi
+    echo "${1};${2};${openmpi}" >> ./${dir}/openmpi
 }
 
 getting_best_value(){
@@ -82,6 +82,7 @@ execution(){
     omp $1
     mpi $1
     hybdrid $1
+    # cuda $1
 }
 
 # plotting functions
@@ -89,22 +90,25 @@ plot_script() {
 cat <<EOF >plot_script.py 
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
-def generate plot(dfs, save_path, title, subtitles):
+def generate_lineplot(dfs, save_path, title, subtitles):
     fig, ax = plt.subplots()
     for d in range(len(dfs)):
         dfs[d].plot(kind='line', ax=ax)
 
     plt.legend(subtitles)
-
+    plt.xlabel('Threads/Process')
     plt.ylabel('Speedup')
     plt.title(title)
     plt.savefig(save_path, dpi=200)
     plt.close()
 
-def generate_data(df, seq_value,  col_name):
-    speed_up = pd.DataFrame(columns=[col_name, 'S'])
 
+def generate_speedup(df, seq_value,  col_name):
+    speed_up = pd.DataFrame(columns=[col_name, 'time', 'S'])
+
+    speed_up['time'] = df['time']
     speed_up['S'] = df['time'] / seq_value
     speed_up['S'] = speed_up['S']
     speed_up[col_name] = df[col_name]
@@ -112,21 +116,51 @@ def generate_data(df, seq_value,  col_name):
     
     return speed_up
 
+def data_final(dfs, col, title):
+    path_table = f"./${dir}/{title}_table.csv"
+    path_img = "./${dir}/" + title + ".png"
+
+    data_speed = pd.DataFrame({ 'Password': ["${1}"],
+                            'OpenMP': [dfs[0][col].max()],
+                            'MPI': [dfs[1][col].max()],
+                            'OpenMPI':[ dfs[2][col].max()]
+                            }
+                            )
+    if os.path.exists(path_table):
+        dt = pd.read_csv(path_table, sep=";")
+        print(dt.head())
+        data_speed = pd.concat([dt, data_speed])
+        print(data_speed.head())
+
+    data_speed.to_csv(path_table, sep=";", index=False)
+    data_speed.set_index('Password', inplace=True)
+    data_speed.plot(kind='bar', rot=0, title=title, width=0.35)
+    plt.ylabel(title.lower())
+    plt.savefig(path_img, dpi=200)
+    plt.close()
+
 omp = pd.read_csv("./${dir}/omp", sep=";")
-print(omp.head())
 
 mpi = pd.read_csv("./${dir}/mpi", sep=";")
-print(mpi.head())
+
+openmpi = pd.read_csv("./${dir}/openmpi", sep=";")
 
 seq = pd.read_csv("./${dir}/seq", sep=";", index_col=0)
 seq.dropna(axis=1, inplace=True)
+print(seq.values)
 seq_value = seq.values[0][0]
 
 subtitles = ['OpenMP', 'MPI']
 dfs = []
-dfs.append(generate_data(omp, seq_value, 'num_threads'))
-dfs.append(generate_data(mpi, seq_value, 'num_process'))
-generate_plot(dfs, "./${dir}/speed_up_mpi.png", 'Speedups in OpenMP & MPI', subtitles)
+dfs.append(generate_speedup(omp, seq_value, 'num_threads'))
+dfs.append(generate_speedup(mpi, seq_value, 'num_process'))
+generate_lineplot(dfs, "./${dir}/speed_up.png", 'Speedups in OpenMP & MPI', subtitles)
+dfs.append(generate_speedup(openmpi, seq_value, 'num_process'))
+
+
+data_final(dfs, 'S', 'Speedup')
+data_final(dfs, 'time', 'Time')
+
 
 EOF
 python plot_script.py
@@ -135,14 +169,14 @@ python plot_script.py
 remove_unnecessary_files() {
     echo " "
     echo "[Remove unnecessary files] "
-    rm -f ./${dir}/omp ./${dir}/mpi ./${dir}/seq bruteForce bruteForce-mpi bruteForce-omp bruteForce-cuda bruteForce-openmpi *.py
+    rm -f *file ./${dir}/omp ./${dir}/mpi ./${dir}/seq bruteForce bruteForce-mpi bruteForce-omp bruteForce-cuda bruteForce-openmpi *.py
     echo " "
 
 }
 
 main(){
-    execution $1
-    plot_script
+   execution $1
+    plot_script $1
     remove_unnecessary_files
 }
 

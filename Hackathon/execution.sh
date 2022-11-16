@@ -69,6 +69,14 @@ hybdrid(){
     openmpi $best_omp $best_mpi $1
 }
 
+cuda(){
+
+    echo "num_blocks;time;" >> ./${dir}/cuda
+    cuda=$(nvcc -arch=sm_70 -o bruteForceGPU $1 ./brute_force_cuda.cu -run | grep "seconds" | cut -d " " -f 1)
+    echo "${j};${cuda};" >> ./${dir}/cuda
+
+}
+
 execution(){
     seq_execution $1
     omp $1
@@ -82,7 +90,19 @@ cat <<EOF >plot_script.py
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def generate_plot(df, seq_value, save_path, title, col_name):
+def generate plot(dfs, save_path, title, subtitles):
+    fig, ax = plt.subplots()
+    for d in range(len(dfs)):
+        dfs[d].plot(kind='line', ax=ax)
+
+    plt.legend(subtitles)
+
+    plt.ylabel('Speedup')
+    plt.title(title)
+    plt.savefig(save_path, dpi=200)
+    plt.close()
+
+def generate_data(df, seq_value,  col_name):
     speed_up = pd.DataFrame(columns=[col_name, 'S'])
 
     speed_up['S'] = df['time'] / seq_value
@@ -90,12 +110,7 @@ def generate_plot(df, seq_value, save_path, title, col_name):
     speed_up[col_name] = df[col_name]
     speed_up.set_index(col_name, inplace=True)
     
-    
-    ax = speed_up.plot(kind='line')
-    plt.ylabel('Speedup')
-    plt.title(title)
-    plt.savefig(save_path, dpi=200)
-    plt.close()
+    return speed_up
 
 omp = pd.read_csv("./${dir}/omp", sep=";")
 print(omp.head())
@@ -107,8 +122,11 @@ seq = pd.read_csv("./${dir}/seq", sep=";", index_col=0)
 seq.dropna(axis=1, inplace=True)
 seq_value = seq.values[0][0]
 
-generate_plot(omp, seq_value, "./${dir}/speed_up_omp.png", 'Speedups in OpenMP', 'num_threads')
-generate_plot(mpi, seq_value, "./${dir}/speed_up_mpi.png", 'Speedups in MPI', 'num_process')
+subtitles = ['OpenMP', 'MPI']
+dfs = []
+dfs.append(generate_data(omp, seq_value, 'num_threads'))
+dfs.append(generate_data(mpi, seq_value, 'num_process'))
+generate_plot(dfs, "./${dir}/speed_up_mpi.png", 'Speedups in OpenMP & MPI', subtitles)
 
 EOF
 python plot_script.py

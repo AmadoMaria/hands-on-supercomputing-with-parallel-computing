@@ -82,7 +82,7 @@ execution(){
     omp $1
     mpi $1
     hybdrid $1
-    # cuda $1
+    cuda $1
 }
 
 # plotting functions
@@ -167,7 +167,7 @@ remove_unnecessary_files() {
 }
 
 main(){
-    # execution $1
+    execution $1
     plot_script $1
     # remove_unnecessary_files
 }

@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cuda.h>
+#include <time.h>
+#include <math.h>
 
 // 97 to 122 use only lowercase letters
 // 65 to 90 use only capital letters
@@ -15,13 +15,19 @@
 __device__ long long my_pow(long long x, int y)
 {
     long long res = 1;
-    int i;
-    for (i = 0; i < y; i++)
-    {
-        res *= x;
-    }
+    if (y == 0)
+        return res;
+    else
+        return x * my_pow(x, y - 1);
+}
 
-    return res;
+long long my_pow_host(long long x, int y)
+{
+    long long res = 1;
+    if (y == 0)
+        return res;
+    else
+        return x * my_pow_host(x, y - 1);
 }
 
 __global__ void bruteForce(char *pass, long long size, long long *result)
@@ -30,61 +36,77 @@ __global__ void bruteForce(char *pass, long long size, long long *result)
     int palavra[MAXIMUM_PASSWORD];
     int pass_b26[MAXIMUM_PASSWORD];
 
-    long long int j = threadIdx.x;
     long long int pass_decimal = 0;
     int base = END_CHAR - START_CHAR + 2;
 
     for (int i = 0; i < MAXIMUM_PASSWORD; i++)
         force[i] = '\0';
 
-    printf("Try to broke the password: %s\n", pass);
-
     for (int i = 0; i < size; i++)
         pass_b26[i] = (int)pass[i] - START_CHAR + 1;
 
     for (int i = size - 1; i > -1; i--)
-        pass_decimal += (long long int)pass_b26[i] * my_pow(base, i);
-
-    long long int max = my_pow(base, size);
-
-    if (j < max)
     {
-        if (j == pass_decimal)
+        pass_decimal += (long long int)pass_b26[i] * my_pow(base, i);
+    }
+
+    long long max = my_pow(base, size);
+
+    long long start = threadIdx.x + blockIdx.x * blockDim.x;
+    for (long long idx = start; idx < max; idx += gridDim.x * blockDim.x)
+    {
+        if (idx >= pass_decimal)
+            return;
+        if (idx == pass_decimal)
         {
-            *result = j;
+            *result = idx;
         }
     }
 }
 
 int main(int argc, char **argv)
 {
-    char password[MAXIMUM_PASSWORD];
-    strcpy(password, argv[1]);
+    char *password;
     time_t t1, t2;
     double dif;
+    long long *result;
+
+    cudaMallocManaged(&result, sizeof(long long) * 282429536481); // verificar o tamanho
+    cudaMallocManaged(&password, sizeof(char) * MAXIMUM_PASSWORD);
+
+    strcpy(password, argv[1]);
     int size = strlen(password);
-    long long int *result;
+    int base = END_CHAR - START_CHAR + 2;
+    long long max = my_pow_host(base, size);
 
-    cudaMallocManaged(&result, sizeof(long long int));
+    // int threadsPerBlock = 1024;
+    // dim3 gridDim(ceil(max / (float)threadsPerBlock), 1, 1);
+    // dim3 blockDim(threadsPerBlock, 1, 1);
 
-    int NUMBER_OF_BLOCKS = 1;
-    int NUMBER_OF_THREADS_PER_BLOCK = size;
+    int deviceId, numberOfSMs;
+    cudaGetDevice(&deviceId);
+    cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId);
+    int number_of_blocks = numberOfSMs * 32;
+    int threads_per_block = 1024;
+
+    printf("Try to broke the password: %s\n", password);
 
     time(&t1);
-    bruteForce<<<NUMBER_OF_BLOCKS, NUMBER_OF_THREADS_PER_BLOCK>>>(password, size, result);
+    bruteForce<<<number_of_blocks, threads_per_block>>>(password, size, result);
     cudaDeviceSynchronize();
     time(&t2);
+
+    long long finalRes = *result;
 
     printf("Found password!\n");
     int index = 0;
     char s[MAXIMUM_PASSWORD];
-    int base = END_CHAR - START_CHAR + 2;
 
-    printf("Password in decimal base: %lli\n", *result);
-    while (*result > 0)
+    printf("Password in decimal base: %lli\n", finalRes);
+    while ((finalRes) > 0)
     {
-        s[index++] = 'a' + *result % base - 1;
-        *result /= base;
+        s[index++] = 'a' + finalRes % base - 1;
+        finalRes /= base;
     }
     s[index] = '\0';
     printf("Found password: %s\n", s);

@@ -1,5 +1,5 @@
 #!/bin/sh
-dir="results_only"
+dir="results"
 if [ ! -d "$dir" ]
 then
  mkdir $dir

@@ -8,11 +8,11 @@ fi
 seq_execution(){
 
     gcc brute_force_sequential.c -o bruteForce -std=c99 -O3
-    ./bruteForce $1
-    # seq=$(./bruteForce $1 | grep "seconds" | cut -d " " -f 1)
 
-    # echo "seq;time;" >> ./${dir}/seq
-    # echo "1;${seq};" >> ./${dir}/seq
+    seq=$(./bruteForce $1 | grep "seconds" | cut -d " " -f 1)
+
+    echo "seq;time;" >> ./${dir}/seq
+    echo "1;${seq};" >> ./${dir}/seq
 
 }
 
@@ -22,8 +22,10 @@ omp(){
     echo "num_threads;time;" >> ./${dir}/omp
     for j in {2..16..2};
     do
-        omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
-        echo "${j};${omp};" >> ./${dir}/omp
+        echo $j
+        OMP_NUM_THREADS=$j ./bruteForce-omp $1
+        # omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
+        # echo "${j};${omp};" >> ./${dir}/omp
     done
 }
 
@@ -79,7 +81,7 @@ cuda(){
 
 execution(){
     seq_execution $1
-    # omp $1
+    omp $1
     # mpi $1
     # hybdrid $1
     # cuda $1

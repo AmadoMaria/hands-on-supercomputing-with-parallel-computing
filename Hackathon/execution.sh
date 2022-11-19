@@ -125,6 +125,28 @@ def generate_speedup_table(df, seq_value,  col_name):
     
     return speed_up
 
+def data_final(dfs, col, title):
+    path_table = f"./results/{title}_table.csv"
+    path_img = "./results/" + title + ".png"
+
+    data_speed = pd.DataFrame({ 'Password': ["senhate"],
+                            'OpenMP': [dfs[0][col].max()],
+                            'MPI': [dfs[1][col].max()],
+                            'OpenMPI':[ dfs[2][col].max()]
+                            }
+                            )
+    if os.path.exists(path_table):
+        dt = pd.read_csv(path_table, sep=";")
+        print(dt.head())
+        data_speed = pd.concat([dt, data_speed])
+        print(data_speed.head())
+
+    data_speed.to_csv(path_table, sep=";", index=False)
+    data_speed.set_index('Password', inplace=True)
+    data_speed.plot(kind='bar', rot=0, title=title, width=0.35)
+    plt.ylabel(title.lower())
+    plt.savefig(path_img, dpi=200)
+    plt.close()
 
 
 omp = pd.read_csv("./${dir}/omp", sep=";")

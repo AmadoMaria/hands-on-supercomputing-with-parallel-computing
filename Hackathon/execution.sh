@@ -1,5 +1,5 @@
 #!/bin/sh
-dir="results"
+dir="results_only"
 if [ ! -d "$dir" ]
 then
  mkdir $dir
@@ -22,10 +22,10 @@ omp(){
     echo "num_threads;time;" >> ./${dir}/omp
     for j in {2..16..2};
     do
-        echo $j
-        OMP_NUM_THREADS=$j ./bruteForce-omp $1
-        # omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
-        # echo "${j};${omp};" >> ./${dir}/omp
+        # echo $j
+        # OMP_NUM_THREADS=$j ./bruteForce-omp $1
+        omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
+        echo "${j};${omp};" >> ./${dir}/omp
     done
 }
 

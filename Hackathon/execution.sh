@@ -72,9 +72,9 @@ hybdrid(){
 cuda(){
 
     echo "num_blocks;time;" >> ./${dir}/cuda
-    cuda=$(nvcc -arch=sm_70 -o bruteForceGPU $1 ./brute_force_cuda.cu -run | grep "seconds" | cut -d " " -f 1)
+    nvcc brute_force_cuda.cu -o bruteForceGPU -x cu
+    cuda=$(./bruteForce-cuda $1 | grep "seconds" | cut -d " " -f 1)
     echo "${j};${cuda};" >> ./${dir}/cuda
-
 }
 
 execution(){
@@ -175,7 +175,7 @@ remove_unnecessary_files() {
 }
 
 main(){
-   execution $1
+    execution $1
     plot_script $1
     remove_unnecessary_files
 }

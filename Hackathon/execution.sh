@@ -8,11 +8,11 @@ fi
 seq_execution(){
 
     gcc brute_force_sequential.c -o bruteForce -std=c99 -O3
+    ./bruteForce $1
+    # seq=$(./bruteForce $1 | grep "seconds" | cut -d " " -f 1)
 
-    seq=$(./bruteForce $1 | grep "seconds" | cut -d " " -f 1)
-
-    echo "seq;time;" >> ./${dir}/seq
-    echo "1;${seq};" >> ./${dir}/seq
+    # echo "seq;time;" >> ./${dir}/seq
+    # echo "1;${seq};" >> ./${dir}/seq
 
 }
 
@@ -79,10 +79,10 @@ cuda(){
 
 execution(){
     seq_execution $1
-    omp $1
-    mpi $1
-    hybdrid $1
-    cuda $1
+    # omp $1
+    # mpi $1
+    # hybdrid $1
+    # cuda $1
 }
 
 # plotting functions

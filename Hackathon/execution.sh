@@ -20,7 +20,7 @@ omp(){
     gcc brute_force_openmp.c -o bruteForce-omp -fopenmp -std=c99 -O3
 
     echo "num_threads;time;" >> ./${dir}/omp
-    for j in {2..16..2};
+    for j in {2..64..2};
     do
         omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${omp};" >> ./${dir}/omp
@@ -30,7 +30,7 @@ omp(){
 mpi(){
     mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
     echo "num_process;time;" >> ./${dir}/mpi
-    for j in {2..6..2};
+    for j in {2..32..2};
     do
         mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi
@@ -82,7 +82,7 @@ execution(){
     omp $1
     mpi $1
     hybdrid $1
-    # cuda $1
+    cuda $1
 }
 
 # plotting functions
@@ -177,7 +177,7 @@ remove_unnecessary_files() {
 main(){
     execution $1
     plot_script $1
-    remove_unnecessary_files
+    # remove_unnecessary_files
 }
 
 main $1

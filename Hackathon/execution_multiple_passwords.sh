@@ -11,8 +11,8 @@ seq_execution(){
 
     seq=$(./bruteForce $1 | grep "seconds" | cut -d " " -f 1)
 
-    echo "seq;time;" >> ./${dir}/seq
-    echo "1;${seq};" >> ./${dir}/seq
+    echo "seq;time;" >> ./${dir}/seq${1}
+    echo "1;${seq};" >> ./${dir}/seq${1}
 
 }
 
@@ -20,7 +20,7 @@ omp(){
     gcc brute_force_openmp.c -o bruteForce-omp -fopenmp -std=c99 -O3
 
     echo "num_threads;time;" >> ./${dir}/omp${1}
-    for j in {2..16..2};
+    for j in {2..8..2};
     do
         omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${omp};" >> ./${dir}/omp${1}
@@ -39,9 +39,9 @@ mpi(){
 
 openmpi(){
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
-    echo "num_threads;num_process;time;" >> ./${dir}/openmpi${1}
+    echo "num_threads;num_process;time;" >> ./${dir}/openmpi${3}
     openmpi=$(OMP_NUM_THREADS=$1 mpirun -np $2 ./bruteForce-openmpi $3 | grep "seconds" | cut -d " " -f 1)
-    echo "${1};${2};${openmpi}" >> ./${dir}/openmpi${1}
+    echo "${1};${2};${openmpi}" >> ./${dir}/openmpi${3}
 }
 
 getting_best_value(){
@@ -92,7 +92,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 
-def generate_lineplot(dfs, save_path, title, subtitles):
+def generate_speedups_graph(dfs, save_path, title, subtitles):
     fig, ax = plt.subplots()
     for d in range(len(dfs)):
         dfs[d].plot(kind='line', ax=ax)
@@ -104,8 +104,7 @@ def generate_lineplot(dfs, save_path, title, subtitles):
     plt.savefig(save_path, dpi=200)
     plt.close()
 
-
-def generate_speedup(df, seq_value,  col_name):
+def generate_speedup_table(df, seq_value,  col_name):
     speed_up = pd.DataFrame(columns=[col_name, 'time', 'S'])
 
     speed_up['time'] = df['time']
@@ -147,18 +146,18 @@ openmpi = pd.read_csv("./${dir}/openmpi${1}", sep=";")
 
 seq = pd.read_csv("./${dir}/seq${1}", sep=";", index_col=0)
 seq.dropna(axis=1, inplace=True)
-print(seq.values)
+
 seq_value = seq.values[0][0]
 
 subtitles = ['OpenMP', 'MPI']
 dfs = []
-dfs.append(generate_speedup(omp, seq_value, 'num_threads'))
-dfs.append(generate_speedup(mpi, seq_value, 'num_process'))
-generate_lineplot(dfs, "./${dir}/speed_up.png", 'Speedups in OpenMP & MPI', subtitles)
-dfs.append(generate_speedup(openmpi, seq_value, 'num_process'))
+dfs.append(generate_speedup_table(omp, seq_value, 'num_threads'))
+dfs.append(generate_speedup_table(mpi, seq_value, 'num_process'))
+generate_speedups_graph(dfs, "./${dir}/speed_up${1}.png", 'Speedups in OpenMP & MPI', subtitles)
+dfs.append(generate_speedup_table(openmpi, seq_value, 'num_process'))
 
 
-data_final(dfs, 'S', 'Speedup')
+data_final(dfs, 'S', 'Speedups')
 data_final(dfs, 'time', 'Time')
 
 
@@ -167,24 +166,50 @@ python plot_script.py
 }
 
 plot_times(){
-    names=$(ls | grep $1)
-cat <<EOF >plot_time
+# names=( $(ls ${dir} | grep $1) )
+# export files=["${names[0]}"
+# for i in "${names[@]:1}"; 
+# do
+#     files+=,"$i"
+# done
+# files+=]
+# echo "${files[@]}"
+cat <<EOF >plot_time.py
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
+print('plotting time for number')
 legs = []
 fig, ax = plt.subplots()
-for name in ${names}:
-    df = pd.from_csv(name, index_col=0)
-    df.set_index('time', inplace=True)
+f = []
+all_data = pd.DataFrame()
+for path, current, files in os.walk("./${dir}"):
+    for file in files:
+        if file.startswith("${1}"):
+            f.append(file)
+for n in range(len(f)):
+    df = pd.read_csv(f"${dir}/{f[n]}", sep=";")
+    df.dropna(axis=1, inplace=True)
+    df.set_index(df.columns[0], inplace=True)
     df.plot(kind='line', ax=ax)
 
-    legs.append(name[${2}:])
-plt.set_ylabel(df.columns[0])
+    if n == 0:
+        all_data = df.copy()
+    else:
+        all_data = pd.concat([all_data, df])
+
+    legs.append("${1}")
+
+plt.ylabel('time')
 plt.legend(legs)
-plt.savefig(f'./${dir}/time_{name[:${2}]}.png', dpi=200)
+all_data.to_csv(f'${dir}/time_${1}.csv', sep=";", index=True)
+plt.savefig(f'${dir}/time_${1}.png', dpi=200)
 plt.close()
 EOF
+# testar python plot_time.py ${files[@]}
+ 
+python plot_time.py
 }
 
 remove_unnecessary_files() {
@@ -203,12 +228,12 @@ main(){
     for p in $pass;
     do
     echo "Executing brute force  algorithm for $p"
-    execution $p
-    plot_script $p
-    done;
-    plot_times "omp" 3
-    plot_times "mpi" 3
-    remove_unnecessary_files
+    # execution $p
+    # plot_script $p
+    done
+    plot_times "omp"
+    plot_times "mpi"
+    # remove_unnecessary_files
 }
 
 main

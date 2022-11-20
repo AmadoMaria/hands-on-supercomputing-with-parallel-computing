@@ -185,7 +185,7 @@ generate_speedups_graph(dfs, "./${dir}/speed_up.png", 'Speedups in OpenMP & MPI'
 dfs.append(generate_speedup_table(openmpi, seq_value, 'num_process'))
 
 # the row that contains the best speedup gotten, its the same which had the minor time
-data_final(dfs, 'S', 'Speedup', 'max')
+data_final(dfs, 'S', 'Speedups', 'max')
 data_final(dfs, 'time', 'Time', 'min')
 
 

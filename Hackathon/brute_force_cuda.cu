@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <cuda.h>
 
 // 97 to 122 use only lowercase letters
 // 65 to 90 use only capital letters
@@ -12,6 +13,16 @@
 #define END_CHAR 122
 #define MAXIMUM_PASSWORD 20
 
+inline cudaError_t checkCuda(cudaError_t result)
+{
+    if (result != cudaSuccess)
+    {
+        fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
+        assert(result == cudaSuccess);
+    }
+    return result;
+}
+
 __device__ long long my_pow(long long x, int y)
 {
     long long res = 1;
@@ -19,15 +30,6 @@ __device__ long long my_pow(long long x, int y)
         return res;
     else
         return x * my_pow(x, y - 1);
-}
-
-long long my_pow_host(long long x, int y)
-{
-    long long res = 1;
-    if (y == 0)
-        return res;
-    else
-        return x * my_pow_host(x, y - 1);
 }
 
 __global__ void bruteForce(char *pass, long long size, long long *result)
@@ -55,8 +57,6 @@ __global__ void bruteForce(char *pass, long long size, long long *result)
     long long start = threadIdx.x + blockIdx.x * blockDim.x;
     for (long long idx = start; idx < max; idx += gridDim.x * blockDim.x)
     {
-        if (idx >= pass_decimal)
-            return;
         if (idx == pass_decimal)
         {
             *result = idx;
@@ -71,17 +71,14 @@ int main(int argc, char **argv)
     double dif;
     long long *result;
 
-    cudaMallocManaged(&result, sizeof(long long) * 282429536481); // verificar o tamanho
-    cudaMallocManaged(&password, sizeof(char) * MAXIMUM_PASSWORD);
+    checkCuda(cudaMallocManaged(&result, sizeof(long long) * 282429536481)); // verificar o tamanho
+    checkCuda(cudaMallocManaged(&password, sizeof(char) * MAXIMUM_PASSWORD));
+
+    cudaError_t syncErr, asyncErr;
 
     strcpy(password, argv[1]);
     int size = strlen(password);
     int base = END_CHAR - START_CHAR + 2;
-    long long max = my_pow_host(base, size);
-
-    // int threadsPerBlock = 1024;
-    // dim3 gridDim(ceil(max / (float)threadsPerBlock), 1, 1);
-    // dim3 blockDim(threadsPerBlock, 1, 1);
 
     int deviceId, numberOfSMs;
     cudaGetDevice(&deviceId);
@@ -93,8 +90,14 @@ int main(int argc, char **argv)
 
     time(&t1);
     bruteForce<<<number_of_blocks, threads_per_block>>>(password, size, result);
-    cudaDeviceSynchronize();
+    syncErr = cudaGetLastError();
+    asyncErr = cudaDeviceSynchronize();
     time(&t2);
+
+    if (syncErr != cudaSuccess)
+        printf("Error: %s\n", cudaGetErrorString(syncErr));
+    if (asyncErr != cudaSuccess)
+        printf("Error: %s\n", cudaGetErrorString(asyncErr));
 
     long long finalRes = *result;
 

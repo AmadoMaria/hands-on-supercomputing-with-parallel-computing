@@ -1,4 +1,4 @@
-!/bin/sh
+#!/bin/sh
 
 #SBATCH --job-name=hackathon                         # Job name
 #SBATCH --nodes=1                              # Run all processes on 2 nodes

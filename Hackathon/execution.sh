@@ -41,11 +41,17 @@ omp(){
 }
 
 mpi(){
-    mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
+    
+    nvcc -I/opt/share/openmpi/4.1.1-cuda/include -L/opt/share/openmpi/4.1.1-cuda/lib64 -DprintLabel -lnccl -lmpi -Xcompiler -fopenmp -o bruteForce-mpi brute_force_mpi.c
+
+    # mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
     echo "num_process;time;" >> ./${dir}/mpi
     for j in {2..6..2};
     do
-        mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
+        
+        mpi=$(mpirun -np $j -x UCX_MEMTYPE_CACHE=n  -mca pml ucx -mca btl ^vader,tcp,openib,smcuda -x UCX_NET_DEVICES=mlx5_0:1  ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
+
+        # mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi
     done
 }
@@ -92,7 +98,7 @@ cuda(){
 
 execution(){
     seq_execution $1
-    omp $1
+    # omp $1
     mpi $1
     hybdrid $1
     # cuda $1

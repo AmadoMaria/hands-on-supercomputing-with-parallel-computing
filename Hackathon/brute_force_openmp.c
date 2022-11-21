@@ -1,7 +1,8 @@
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 #include <omp.h>
 
 // 97 to 122 use only lowercase letters
@@ -15,18 +16,18 @@
 long long my_pow(long long x, int y)
 {
     long long res = 1;
-    long long i;
-
-    for (i = 0; i < y; i++)
-    {
-        res *= x;
-    }
-
-    return res;
+    if (y == 0)
+        return res;
+    else
+        return x * my_pow(x, y - 1);
 }
 
 void bruteForce(char *pass)
 {
+    time_t t1, t2;
+    double dif;
+    time(&t1);
+
     char force[MAXIMUM_PASSWORD];
     int palavra[MAXIMUM_PASSWORD];
     int pass_b26[MAXIMUM_PASSWORD];
@@ -52,27 +53,31 @@ void bruteForce(char *pass)
     char s[MAXIMUM_PASSWORD];
     int go = 1;
 
-#pragma omp parallel for shared(go)
+#pragma omp parallel for private(j) shared(go)
     for (j = 0; j < max; j++)
     {
-        if (go)
+        // if(go) { //flag necessária se não usar o exit(0)
+        if (j == pass_decimal)
         {
-            if (j == pass_decimal)
-            {
-                go = 0;
-                printf("Found password!\n");
-                int index = 0;
+            go = 0;
+            printf("Found password!\n");
+            int index = 0;
 
-                printf("Password in decimal base: %lli\n", j);
-                while (j > 0)
-                {
-                    s[index++] = 'a' + j % base - 1;
-                    j /= base;
-                }
-                s[index] = '\0';
-                printf("Found password: %s\n", s);
+            printf("Password in decimal base: %lli\n", j);
+            while (j > 0)
+            {
+                s[index++] = 'a' + j % base - 1;
+                j /= base;
             }
+            s[index] = '\0';
+            printf("Found password: %s\n", s);
+            time(&t2);
+            dif = difftime(t2, t1);
+
+            printf("\n%1.2f seconds\n", dif);
+            exit(0); // com esse exit não exibe o tempo
         }
+        //}
     }
 }
 
@@ -80,16 +85,8 @@ int main(int argc, char **argv)
 {
     char password[MAXIMUM_PASSWORD];
     strcpy(password, argv[1]);
-    time_t t1, t2;
-    double dif;
 
-    time(&t1);
     bruteForce(password);
-    time(&t2);
-
-    dif = difftime(t2, t1);
-
-    printf("\n%1.2f seconds\n", dif);
 
     return 0;
 }

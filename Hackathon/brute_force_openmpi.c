@@ -24,6 +24,10 @@ long long my_pow(long long x, int y)
 
 void bruteForce(char *pass, int rank, int numberProcess)
 {
+    time_t t1, t2;
+    double dif;
+    time(&t1);
+
     char force[MAXIMUM_PASSWORD];
     int palavra[MAXIMUM_PASSWORD];
     int pass_b26[MAXIMUM_PASSWORD];
@@ -50,30 +54,32 @@ void bruteForce(char *pass, int rank, int numberProcess)
 
     long long lower_bound = rank * partition;
     long long upper_bound = (rank + 1) * partition;
-    int go = 1;
     int rankThatFound;
 
 #pragma omp parallel for shared(go, rankThatFound)
     for (j = lower_bound; j < upper_bound; j++)
     {
-        if (go)
+        if (j == pass_decimal)
         {
-            if (j == pass_decimal)
-            {
-                go = 0;
-                rankThatFound = rank;
-                printf("Found password!\n");
-                int index = 0;
+            go = 0;
+            rankThatFound = rank;
+            printf("Found password!\n");
+            int index = 0;
 
-                printf("Password in decimal base: %lli\n", j);
-                while (j > 0)
-                {
-                    s[index++] = 'a' + j % base - 1;
-                    j /= base;
-                }
-                s[index] = '\0';
-                printf("Found password: %s\n", s);
+            printf("Password in decimal base: %lli\n", j);
+            while (j > 0)
+            {
+                s[index++] = 'a' + j % base - 1;
+                j /= base;
             }
+            s[index] = '\0';
+            printf("Found password: %s\n", s);
+            time(&t2);
+            dif = difftime(t2, t1);
+
+            printf("\n%1.2f seconds\n", dif);
+            MPI_Finalize();
+            exit(0);
         }
     }
     if (rankThatFound != rank)
@@ -87,8 +93,6 @@ int main(int argc, char **argv)
 {
     char password[MAXIMUM_PASSWORD];
     strcpy(password, argv[1]);
-    time_t t1, t2;
-    double dif;
 
     int numberProcess, rank;
     MPI_Init(&argc, &argv);
@@ -99,13 +103,7 @@ int main(int argc, char **argv)
     if (rank == 0)
         printf("Try to broke the password: %s\n", password);
 
-    time(&t1);
     bruteForce(password, rank, numberProcess);
-    time(&t2);
 
-    dif = difftime(t2, t1);
-
-    printf("\n%1.2f seconds\n", dif);
-    MPI_Finalize();
     return 0;
 }

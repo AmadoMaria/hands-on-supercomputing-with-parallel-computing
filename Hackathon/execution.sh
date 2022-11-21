@@ -20,7 +20,8 @@ omp(){
     gcc brute_force_openmp.c -o bruteForce-omp -fopenmp -std=c99 -O3
 
     echo "num_threads;time;" >> ./${dir}/omp
-    for j in {2..8..2};
+    # for j in {2..4..2};
+    for ((j=2; j<=128; j*=2 ));
     do
         # echo $j
         # OMP_NUM_THREADS=$j ./bruteForce-omp $1
@@ -32,7 +33,7 @@ omp(){
 mpi(){
     mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
     echo "num_process;time;" >> ./${dir}/mpi
-    for j in {2..4..2};
+    for j in {2..64..2};
     do
         mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi
@@ -84,7 +85,7 @@ execution(){
     omp $1
     mpi $1
     hybdrid $1
-    # cuda $1
+    cuda $1
 }
 
 # plotting functions
@@ -98,6 +99,7 @@ def generate_time_exec_graph(df_, col, save_path, title, subtitles):
     df = df_.copy(deep=True)
     df.plot(kind='line', title=title, legend=None)
 
+    plt.xticks(df.index.values.tolist(), df.index.values.tolist())
     plt.xlabel(col)
     plt.ylabel('Time execution')
     plt.savefig(save_path, dpi=200)
@@ -117,21 +119,23 @@ def generate_speedups_graph(dfs, save_path, title, subtitles):
 
 
 def generate_speedup_table(df, seq_value,  col_name):
-    speed_up = pd.DataFrame(columns=[col_name, 'time', 'S'])
+    speed_up = pd.DataFrame({col_name: [1], 'time': [seq_value]})
 
-    speed_up['time'] = df['time']
+    if col_name != 'seq':
+        speed_up = pd.concat([speed_up, df])
+        speed_up['time'] = df['time']
+
     speed_up['S'] = df['time'] / seq_value
     speed_up['S'] = speed_up['S']
-    speed_up[col_name] = df[col_name]
     speed_up.set_index(col_name, inplace=True)
-    
+
     return speed_up
 
 def data_final(dfs, col, title, type='max'):
     path_table = f"./${dir}/{title}_table.csv"
     path_img = "./${dir}/" + title + ".png"
 
-    seq = dfs[0][col][0]
+    seq = dfs[0][col].values[0]
     if type == "max":
         omp = dfs[1][col].max()
         mpi = dfs[2][col].max()
@@ -149,7 +153,7 @@ def data_final(dfs, col, title, type='max'):
                                 )    
     if os.path.exists(path_table):
         dt = pd.read_csv(path_table, sep=";")
-        print(dt.head())
+
         data_speed = pd.concat([dt, data_speed])
         print(data_speed.head())
 

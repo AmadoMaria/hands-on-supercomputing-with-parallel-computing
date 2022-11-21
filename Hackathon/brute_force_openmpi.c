@@ -56,12 +56,11 @@ void bruteForce(char *pass, int rank, int numberProcess)
     long long upper_bound = (rank + 1) * partition;
     int rankThatFound;
 
-#pragma omp parallel for shared(go, rankThatFound)
+#pragma omp parallel for shared(rankThatFound)
     for (j = lower_bound; j < upper_bound; j++)
     {
         if (j == pass_decimal)
         {
-            go = 0;
             rankThatFound = rank;
             printf("Found password!\n");
             int index = 0;

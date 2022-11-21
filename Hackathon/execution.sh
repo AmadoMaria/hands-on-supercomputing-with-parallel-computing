@@ -217,7 +217,7 @@ remove_unnecessary_files() {
 
 main(){
     execution $1
-    plot_script $1
+    # plot_script $1
     remove_unnecessary_files
 }
 

@@ -4,6 +4,7 @@
 #include <time.h>
 #include <math.h>
 #include <cuda.h>
+#include <assert.h>
 
 // 97 to 122 use only lowercase letters
 // 65 to 90 use only capital letters

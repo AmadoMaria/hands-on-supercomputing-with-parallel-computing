@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1                    # 1 job per node
 #SBATCH --account=treinamento                   # Account of the group
 
-
+module load openmpi/4.1.1-cuda-11.6-ofed-5.4
 
 dir="results"
 if [ ! -d "$dir" ]

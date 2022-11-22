@@ -58,8 +58,22 @@ mpi(){
 openmpi(){
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
     echo "num_threads;num_process;time;" >> ./${dir}/openmpi
-    openmpi=$(OMP_NUM_THREADS=$1 mpirun -np $2 ./bruteForce-openmpi $3 | grep "seconds" | cut -d " " -f 1)
-    echo "${1};${2};${openmpi}" >> ./${dir}/openmpi
+    best_mpi=$1
+    best_omp=$2
+    process=$best_mpi-6
+    max=$best_mpi+6
+    thread=$best_omp/8
+    max_t=$best_omp*8
+
+    for ((j=$process; j <= $max; j+=2));
+    do
+        for ((i=$thread; i <=$max_t; i*=2))
+        do
+            openmpi=$(OMP_NUM_THREADS=$i mpirun -np $j ./bruteForce-openmpi $1 | grep "seconds" | cut -d " " -f 1)
+            echo "${1};${2};${openmpi}" >> ./${dir}/openmpi
+        done
+    done
+    
 }
 
 getting_best_value(){
@@ -80,24 +94,12 @@ getting_best_value(){
     echo $best
 }
 
-hybdrid(){
+hybrid(){
 
     best_omp=$(getting_best_value ./${dir}/omp)
     best_mpi=$(getting_best_value ./${dir}/mpi)
-    process=$($best_mpi-2)
-    process=$best_mpi-6
-    max=$best_mpi+6
-    thread=$best_omp/8
-    max_t=$best_omp*8
 
-    for ((j=$process; j <= $max; j+=2));
-    do
-        for ((i=$thread; i <=$max_t; i*=2))
-        do
-            openmpi $i $j $1
-        done
-    done
-    
+    openmpi $best_omp $best_mpi $1    
 }
 
 cuda(){

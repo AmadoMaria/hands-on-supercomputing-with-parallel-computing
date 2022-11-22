@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#include <cuda.h>
 #include <assert.h>
 
 // 97 to 122 use only lowercase letters
@@ -33,7 +32,7 @@ __device__ long long my_pow(long long x, int y)
         return x * my_pow(x, y - 1);
 }
 
-__global__ void bruteForce(char *pass, long long size, long long *result)
+__global__ void bruteForce(char *pass, long long size)
 {
     char force[MAXIMUM_PASSWORD];
     int palavra[MAXIMUM_PASSWORD];
@@ -58,9 +57,20 @@ __global__ void bruteForce(char *pass, long long size, long long *result)
     long long start = threadIdx.x + blockIdx.x * blockDim.x;
     for (long long idx = start; idx < max; idx += gridDim.x * blockDim.x)
     {
+        // if(idx > pass_decimal){} return;
         if (idx == pass_decimal)
         {
-            *result = idx;
+            int index = 0;
+            char s[MAXIMUM_PASSWORD];
+
+            printf("Password in decimal base: %lli\n", idx);
+            while ((idx) > 0)
+            {
+                s[index++] = 'a' + idx % base - 1;
+                idx /= base;
+            }
+            s[index] = '\0';
+            printf("Found password: %s\n", s);
         }
     }
 }
@@ -70,16 +80,16 @@ int main(int argc, char **argv)
     char *password;
     time_t t1, t2;
     double dif;
-    long long *result;
+    // long long *result;
 
-    checkCuda(cudaMallocManaged(&result, sizeof(long long) * 282429536481)); // verificar o tamanho
+    // cudaMallocManaged(&result, sizeof(long long) * 282429536481); //verificar o tamanho
+
     checkCuda(cudaMallocManaged(&password, sizeof(char) * MAXIMUM_PASSWORD));
 
     cudaError_t syncErr, asyncErr;
 
     strcpy(password, argv[1]);
     int size = strlen(password);
-    int base = END_CHAR - START_CHAR + 2;
 
     int deviceId, numberOfSMs;
     cudaGetDevice(&deviceId);
@@ -90,7 +100,7 @@ int main(int argc, char **argv)
     printf("Try to broke the password: %s\n", password);
 
     time(&t1);
-    bruteForce<<<number_of_blocks, threads_per_block>>>(password, size, result);
+    bruteForce<<<number_of_blocks, threads_per_block>>>(password, size);
     syncErr = cudaGetLastError();
     asyncErr = cudaDeviceSynchronize();
     time(&t2);
@@ -100,25 +110,10 @@ int main(int argc, char **argv)
     if (asyncErr != cudaSuccess)
         printf("Error: %s\n", cudaGetErrorString(asyncErr));
 
-    long long finalRes = *result;
-
-    printf("Found password!\n");
-    int index = 0;
-    char s[MAXIMUM_PASSWORD];
-
-    printf("Password in decimal base: %lli\n", finalRes);
-    while ((finalRes) > 0)
-    {
-        s[index++] = 'a' + finalRes % base - 1;
-        finalRes /= base;
-    }
-    s[index] = '\0';
-    printf("Found password: %s\n", s);
-
     dif = difftime(t2, t1);
 
     printf("\n%1.2f seconds\n", dif);
-    cudaFree(result);
+    cudaFree(password);
 
     return 0;
 }

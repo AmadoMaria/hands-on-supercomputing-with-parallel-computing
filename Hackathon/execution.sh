@@ -30,8 +30,8 @@ omp(){
     gcc brute_force_openmp.c -o bruteForce-omp -fopenmp -std=c99 -O3
 
     echo "num_threads;time;" >> ./${dir}/omp
-    for j in {2..4..2};
-    # for ((j=2; j<=128; j*=2 ));
+    #for j in {2..4..2};
+    for ((j=2; j<=128; j*=2 ));
     do
         # echo $j
         # OMP_NUM_THREADS=$j ./bruteForce-omp $1
@@ -46,9 +46,8 @@ mpi(){
 
     # mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
     echo "num_process;time;" >> ./${dir}/mpi
-    for j in {2..6..2};
+    for j in {2..34..2};
     do
-        
         mpi=$(mpirun -np $j -x UCX_MEMTYPE_CACHE=n  -mca pml ucx -mca btl ^vader,tcp,openib,smcuda -x UCX_NET_DEVICES=mlx5_0:1  ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
 
         # mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
@@ -85,7 +84,20 @@ hybdrid(){
 
     best_omp=$(getting_best_value ./${dir}/omp)
     best_mpi=$(getting_best_value ./${dir}/mpi)
-    openmpi $best_omp $best_mpi $1
+    process=$($best_mpi-2)
+    process=$best_mpi-6
+    max=$best_mpi+6
+    thread=$best_omp/8
+    max_t=$best_omp*8
+
+    for ((j=$process; j <= $max; j+=2));
+    do
+        for ((i=$thread; i <=$max_t; i*=2))
+        do
+            openmpi $i $j $1
+        done
+    done
+    
 }
 
 cuda(){
@@ -98,10 +110,10 @@ cuda(){
 
 execution(){
     seq_execution $1
-    # omp $1
+    omp $1
     mpi $1
     hybdrid $1
-    # cuda $1
+    cuda $1
 }
 
 # plotting functions
@@ -223,8 +235,8 @@ remove_unnecessary_files() {
 
 main(){
     execution $1
-    # plot_script $1
-    # remove_unnecessary_files
+    plot_script $1
+    remove_unnecessary_files
 }
 
 main $1

@@ -48,6 +48,7 @@ void bruteForce(char *pass)
   {
     long long pass_decimal_pow;
     my_pow(base, i, &pass_decimal_pow);
+    // testar se essa transformação consome muito tempo
     pass_decimal += (long long int)pass_b26[i] * pass_decimal_pow;
   }
 

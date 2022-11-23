@@ -31,7 +31,7 @@ omp(){
 
     echo "num_threads;time;" >> ./${dir}/omp
     #for j in {2..4..2};
-    for ((j=2; j<=128; j*=2 ));
+    for ((j=2; j<=2048; j*=2 ));
     do
         # echo $j
         # OMP_NUM_THREADS=$j ./bruteForce-omp $1
@@ -114,7 +114,7 @@ execution(){
     seq_execution $1
     omp $1
     mpi $1
-    hybdrid $1
+    hybrid $1
     cuda $1
 }
 
@@ -238,7 +238,7 @@ remove_unnecessary_files() {
 main(){
     execution $1
     plot_script $1
-    remove_unnecessary_files
+    # remove_unnecessary_files
 }
 
 main $1

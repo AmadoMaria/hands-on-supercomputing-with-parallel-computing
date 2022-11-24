@@ -48,10 +48,10 @@ mpi(){
     mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
 
     echo "num_process;time;" >> ./${dir}/mpi
-    for j in {2..34..2};
+    for j in {2..32..2};
     do
-        mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
-
+        mpi=$(mpirun -x MXM_LOG_LEVEL=error -np $j --allow-run-as-root ./bruteForce-mpi $1 2>/dev/null | grep "seconds" | cut -d " " -f 1)
+        # mpirun -x MXM_LOG_LEVEL=error -np 32 --allow-run-as-root ./bruteForce-mpi senha 2>/dev/null
         # mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi
     done
@@ -68,11 +68,11 @@ openmpi(){
     thread=$best_omp/8
     max_t=$best_omp*8
 
-    for ((j=$process; j <= $max && j<=34; j+=2));
+    for ((j=$process; j <= $max && j<34; j+=2));
     do
         for ((i=$thread; i <=$max_t && i<128; i*=2))
         do
-            openmpi=$(OMP_NUM_THREADS=$i mpirun -np $j ./bruteForce-openmpi $1 | grep "seconds" | cut -d " " -f 1)
+            openmpi=$(OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $1 2>/dev/null | grep "seconds" | cut -d " " -f 1)
             echo "${1};${2};${openmpi}" >> ./${dir}/openmpi
         done
     done

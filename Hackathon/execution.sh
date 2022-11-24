@@ -60,7 +60,7 @@ mpi(){
 openmpi(){
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
     
-    echo "num_threads;num_process;time;" > ./${dir}/openmpi
+    echo "num_threads;num_process;time;" >> ./${dir}/openmpi
     best_mpi=$1
     best_omp=$2
     process=$best_mpi-6
@@ -70,7 +70,7 @@ openmpi(){
 
     for ((j=$process; j <= $max && j<=34; j+=2));
     do
-        for ((i=$thread; i <=$max_t; i*=2))
+        for ((i=$thread; i <=$max_t && i<128; i*=2))
         do
             openmpi=$(OMP_NUM_THREADS=$i mpirun -np $j ./bruteForce-openmpi $1 | grep "seconds" | cut -d " " -f 1)
             echo "${1};${2};${openmpi}" >> ./${dir}/openmpi
@@ -107,15 +107,15 @@ hybrid(){
 
 cuda(){
 
-    echo "num_blocks;time;" > ./${dir}/cuda
+    echo "num_blocks;time;" >> ./${dir}/cuda
     nvcc brute_force_cuda.cu -o bruteForceGPU -x cu
     cuda=$(./bruteForceGPU $1 | grep "seconds" | cut -d " " -f 1)
     echo "${j};${cuda};" >> ./${dir}/cuda
 }
 
 execution(){
-    seq_execution $1
-    omp $1
+    # seq_execution $1
+    # omp $1
     mpi $1
     hybrid $1
     cuda $1

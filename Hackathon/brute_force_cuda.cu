@@ -66,7 +66,7 @@ __global__ void bruteForce(char *pass, long long size)
             printf("Password in decimal base: %lli\n", idx);
             while ((idx) > 0)
             {
-                s[index++] = 'a' + idx % base - 1;
+                s[index++] = START_CHAR + idx % base - 1;
                 idx /= base;
             }
             s[index] = '\0';

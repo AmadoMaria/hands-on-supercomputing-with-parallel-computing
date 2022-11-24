@@ -9,7 +9,7 @@
 
 module load openmpi/4.1.1-cuda-11.6-ofed-5.4
 
-dir="results"
+dir="results_${1}"
 if [ ! -d "$dir" ]
 then
  mkdir $dir
@@ -114,11 +114,11 @@ cuda(){
 }
 
 execution(){
-    # seq_execution $1
-    # omp $1
-    # mpi $1
+    seq_execution $1
+    omp $1
+    mpi $1
     hybrid $1
-    # cuda $1
+    cuda $1
 }
 
 # plotting functions

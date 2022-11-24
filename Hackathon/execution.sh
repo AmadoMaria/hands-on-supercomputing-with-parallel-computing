@@ -33,6 +33,7 @@ omp(){
     #for j in {2..4..2};
     for ((j=2; j<=2048; j*=2 ));
     do
+    
         # echo $j
         # OMP_NUM_THREADS=$j ./bruteForce-omp $1
         omp=$(OMP_NUM_THREADS=$j ./bruteForce-omp $1 | grep "seconds" | cut -d " " -f 1)
@@ -42,13 +43,14 @@ omp(){
 
 mpi(){
     
-    nvcc -I/opt/share/openmpi/4.1.1-cuda/include -L/opt/share/openmpi/4.1.1-cuda/lib64 -DprintLabel -lnccl -lmpi -Xcompiler -fopenmp -o bruteForce-mpi brute_force_mpi.c
+    # nvcc -I/opt/share/openmpi/4.1.1-cuda/include -L/opt/share/openmpi/4.1.1-cuda/lib64 -DprintLabel -lnccl -lmpi -Xcompiler -fopenmp -o bruteForce-mpi brute_force_mpi.c
 
-    # mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
+    mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
+
     echo "num_process;time;" >> ./${dir}/mpi
     for j in {2..34..2};
     do
-        mpi=$(mpirun -np $j -x UCX_MEMTYPE_CACHE=n  -mca pml ucx -mca btl ^vader,tcp,openib,smcuda -x UCX_NET_DEVICES=mlx5_0:1  ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
+        mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
 
         # mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi
@@ -57,7 +59,8 @@ mpi(){
 
 openmpi(){
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
-    echo "num_threads;num_process;time;" >> ./${dir}/openmpi
+    
+    echo "num_threads;num_process;time;" > ./${dir}/openmpi
     best_mpi=$1
     best_omp=$2
     process=$best_mpi-6
@@ -65,7 +68,7 @@ openmpi(){
     thread=$best_omp/8
     max_t=$best_omp*8
 
-    for ((j=$process; j <= $max; j+=2));
+    for ((j=$process; j <= $max && j<=34; j+=2));
     do
         for ((i=$thread; i <=$max_t; i*=2))
         do
@@ -104,18 +107,18 @@ hybrid(){
 
 cuda(){
 
-    echo "num_blocks;time;" >> ./${dir}/cuda
+    echo "num_blocks;time;" > ./${dir}/cuda
     nvcc brute_force_cuda.cu -o bruteForceGPU -x cu
     cuda=$(./bruteForceGPU $1 | grep "seconds" | cut -d " " -f 1)
     echo "${j};${cuda};" >> ./${dir}/cuda
 }
 
 execution(){
-    seq_execution $1
-    omp $1
-    mpi $1
+    # seq_execution $1
+    # omp $1
+    # mpi $1
     hybrid $1
-    cuda $1
+    # cuda $1
 }
 
 # plotting functions

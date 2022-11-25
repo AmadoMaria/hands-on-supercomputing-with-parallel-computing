@@ -123,8 +123,8 @@ execution(){
     # seq_execution $1
     # omp $1
     # mpi $1
-    hybrid $1
-    # cuda $1
+    # hybrid $1
+    cuda $1
 }
 
 # plotting functions
@@ -247,7 +247,7 @@ remove_unnecessary_files() {
 main(){
     execution $1
     echo "Plotting graphs..."
-    plot_script $1
+    # plot_script $1
     # remove_unnecessary_files
 }
 

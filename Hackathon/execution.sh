@@ -27,8 +27,9 @@ seq_execution(){
 }
 
 omp(){
+    echo "          Compiling OpenMP paralelization..."
     gcc brute_force_openmp.c -o bruteForce-omp -fopenmp -std=c99 -O3
-
+    echo "          Executing OpenMP..."
     echo "num_threads;time;" >> ./${dir}/omp
     #for j in {2..4..2};
     for ((j=2; j<=2048; j*=2 ));
@@ -44,9 +45,9 @@ omp(){
 mpi(){
     
     # nvcc -I/opt/share/openmpi/4.1.1-cuda/include -L/opt/share/openmpi/4.1.1-cuda/lib64 -DprintLabel -lnccl -lmpi -Xcompiler -fopenmp -o bruteForce-mpi brute_force_mpi.c
-
+    echo "          Compiling MPI paralelization"
     mpicc brute_force_mpi.c -o bruteForce-mpi -fopenmp -std=c99 -O3
-
+    echo "          Executing MPI..."
     echo "num_process;time;" >> ./${dir}/mpi
     for j in {2..32..2};
     do
@@ -59,8 +60,9 @@ mpi(){
 }
 
 openmpi(){
+    echo "          Compiling OpenMPI paralelization"
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
-    
+    echo "          Executing OpenMPI"
     echo "num_threads;num_process;time;" >> ./${dir}/openmpi
     best_mpi=$1
     best_omp=$2
@@ -107,9 +109,10 @@ hybrid(){
 }
 
 cuda(){
-
+    echo "Compiling GPU CUDA paralelization"
     echo "num_blocks;time;" >> ./${dir}/cuda
     nvcc brute_force_cuda.cu -o bruteForceGPU -x cu
+    echo "Executing CUDA..."
     cuda=$(./bruteForceGPU $1 | grep "seconds" | cut -d " " -f 1)
     echo "${j};${cuda};" >> ./${dir}/cuda
 }
@@ -117,8 +120,8 @@ cuda(){
 execution(){
     # seq_execution $1
     # omp $1
-    mpi $1
-    hybrid $1
+    # mpi $1
+    # hybrid $1
     cuda $1
 }
 
@@ -241,7 +244,8 @@ remove_unnecessary_files() {
 
 main(){
     execution $1
-    plot_script $1
+    # echo "Plotting graphs..."
+    # plot_script $1
     # remove_unnecessary_files
 }
 

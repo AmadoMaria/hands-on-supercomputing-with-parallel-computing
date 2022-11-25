@@ -57,7 +57,8 @@ __global__ void bruteForce(char *pass, long long size)
     long long start = threadIdx.x + blockIdx.x * blockDim.x;
     for (long long idx = start; idx < max; idx += gridDim.x * blockDim.x)
     {
-        // if(idx > pass_decimal){} return;
+        if (idx > pass_decimal)
+            return;
         if (idx == pass_decimal)
         {
             int index = 0;
@@ -71,6 +72,7 @@ __global__ void bruteForce(char *pass, long long size)
             }
             s[index] = '\0';
             printf("Found password: %s\n", s);
+            return;
         }
     }
 }
@@ -80,9 +82,6 @@ int main(int argc, char **argv)
     char *password;
     time_t t1, t2;
     double dif;
-    // long long *result;
-
-    // cudaMallocManaged(&result, sizeof(long long) * 282429536481); //verificar o tamanho
 
     checkCuda(cudaMallocManaged(&password, sizeof(char) * MAXIMUM_PASSWORD));
 

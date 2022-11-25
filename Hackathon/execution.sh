@@ -120,7 +120,7 @@ cuda(){
 execution(){
     # seq_execution $1
     # omp $1
-    # mpi $1
+    mpi $1
     # hybrid $1
     cuda $1
 }

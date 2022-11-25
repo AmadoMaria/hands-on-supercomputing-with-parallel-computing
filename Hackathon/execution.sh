@@ -73,11 +73,12 @@ openmpi(){
 
     for ((j=$process; j <= $max && j <= 32; j+=2));
     do
-        for ((i=$thread; i <= $max_t && (i*j) < 3840  ; i+=2))
+        for ((i=$thread; i <= $max_t && i <= 128 && (i*j) < 3840; i*=2))
         do
             echo "Running with $i threads and $j proccess"
-            openmpi=$(OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $1 2>/dev/null | grep "seconds" | cut -d " " -f 1)
-            echo "${i};${j};${openmpi}" >> ./${dir}/openmpi
+            OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $1 2>/dev/null > output_openmpi
+            ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
+            echo "${i};${j};${ompi}" >> ./${dir}/openmpi
         done
     done
     

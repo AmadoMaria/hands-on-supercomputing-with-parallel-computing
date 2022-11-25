@@ -71,12 +71,12 @@ openmpi(){
     thread=$best_omp/8
     max_t=$best_omp*8
 
-    for ((j=$process; j <= $max && j <= 32; j+=2));
+    for ((j=$process; j > 0 && j <= $max && j <= 32; j+=2));
     do
         for ((i=$thread; i <= $max_t && i <= 128 && (i*j) < 3840; i*=2))
         do
             echo "Running with $i threads and $j proccess"
-            OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $1 2>/dev/null > output_openmpi
+            OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
             ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
             echo "${i};${j};${ompi}" >> ./${dir}/openmpi
         done

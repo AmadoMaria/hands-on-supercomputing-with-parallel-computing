@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 
     dif = difftime(t2, t1);
 
-    printf("\n%1.6f seconds\n", dif);
+    printf("\n%1.20f seconds\n", dif);
     cudaFree(password);
 
     return 0;

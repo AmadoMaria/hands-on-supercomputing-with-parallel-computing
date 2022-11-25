@@ -64,8 +64,8 @@ openmpi(){
     mpicc brute_force_openmpi.c -o bruteForce-openmpi -fopenmp
     echo "          Executing OpenMPI"
     echo "num_threads;num_process;time;" >> ./${dir}/openmpi
-    best_mpi=$1
-    best_omp=$2
+    best_mpi=$2
+    best_omp=$1
     process=$best_mpi-6
     max=$best_mpi+6
     thread=$best_omp/8
@@ -75,6 +75,7 @@ openmpi(){
     do
         for ((i=$thread; i <= $max_t && i < 128; i+=2))
         do
+            echo "Running with $i threads and $j proccess"
             openmpi=$(OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $1 2>/dev/null | grep "seconds" | cut -d " " -f 1)
             echo "${1};${2};${openmpi}" >> ./${dir}/openmpi
         done

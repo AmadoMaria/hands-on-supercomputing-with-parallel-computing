@@ -50,7 +50,8 @@ mpi(){
     echo "num_process;time;" >> ./${dir}/mpi
     for j in {2..32..2};
     do
-        mpi=$(mpirun -x MXM_LOG_LEVEL=error -np $j --allow-run-as-root ./bruteForce-mpi $1 2>/dev/null | grep "seconds" | cut -d " " -f 1)
+        mpirun -x MXM_LOG_LEVEL=error -np $j --allow-run-as-root ./bruteForce-mpi $1 2>/dev/null > output_mpi
+        mpi=$(cat output_mpi | grep "seconds" | cut -d " " -f 1)
         # mpirun -x MXM_LOG_LEVEL=error -np 32 --allow-run-as-root ./bruteForce-mpi senha 2>/dev/null
         # mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi

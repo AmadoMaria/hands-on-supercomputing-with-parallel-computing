@@ -66,11 +66,15 @@ openmpi(){
     echo "num_threads;num_process;time;" >> ./${dir}/openmpi
     best_mpi=$2
     best_omp=$1
-    process=$best_mpi-6
+    process=26
     max=$best_mpi+6
     thread=$best_omp/8
     max_t=$best_omp*8
-
+    
+    OMP_NUM_THREADS=128 mpirun -x MXM_LOG_LEVEL=error -np $process ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
+    ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
+    echo "128;${process};${ompi}" >> ./${dir}/openmpi
+    
     for ((j=$process; j > 0 && j <= $max && j <= 32; j+=2));
     do
         for ((i=$thread; i <= $max_t && i <= 128 && (i*j) < 3840; i*=2))
@@ -123,8 +127,8 @@ execution(){
     # seq_execution $1
     # omp $1
     # mpi $1
-    # hybrid $1
-    cuda $1
+    hybrid $1
+    # cuda $1
 }
 
 # plotting functions

@@ -71,10 +71,6 @@ openmpi(){
     thread=$best_omp/8
     max_t=$best_omp*8
     
-    OMP_NUM_THREADS=128 mpirun -x MXM_LOG_LEVEL=error -np 24 ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
-    ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
-    echo "${i};${j};${ompi}" >> ./${dir}/openmpi
-
     for ((j=$process; j > 0 && j <= $max && j <= 32; j+=2));
     do
         for ((i=$thread; i <= $max_t && i <= 128 && (i*j) < 3840; i*=2))

@@ -66,15 +66,15 @@ openmpi(){
     echo "num_threads;num_process;time;" >> ./${dir}/openmpi
     best_mpi=$2
     best_omp=$1
-    process=26
+    process=30
     max=$best_mpi+6
     thread=$best_omp/8
     max_t=$best_omp*8
     
-    OMP_NUM_THREADS=128 mpirun -x MXM_LOG_LEVEL=error -np $process ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
+    OMP_NUM_THREADS=128 mpirun -x MXM_LOG_LEVEL=error -np 24 ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
     ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
-    echo "128;${process};${ompi}" >> ./${dir}/openmpi
-    
+    echo "${i};${j};${ompi}" >> ./${dir}/openmpi
+
     for ((j=$process; j > 0 && j <= $max && j <= 32; j+=2));
     do
         for ((i=$thread; i <= $max_t && i <= 128 && (i*j) < 3840; i*=2))
@@ -137,40 +137,56 @@ cat <<EOF >plot_script.py
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import numpy as np
 
 def generate_time_exec_graph(df_, col, save_path, title, subtitles):
     df = df_.copy(deep=True)
-    df.plot(kind='line', title=title, legend=None)
-
-    plt.xticks(df.index.values.tolist(), df.index.values.tolist())
-    plt.xlabel(col)
+    x = df.index.values.tolist()
+    y = df['time']
+    plt.plot(range(len(x)), y)
+    plt.xticks(range(len(x)), x)
     plt.ylabel('Time execution')
+    plt.xlabel(subtitles)
+    plt.title(title)
     plt.savefig(save_path, dpi=200)
     plt.close()
 
-def generate_speedups_graph(dfs, save_path, title, subtitles):
-    fig, ax = plt.subplots()
-    for d in range(len(dfs)):
-        dfs[d].plot(kind='line', ax=ax)
+def generate_speedups_graph(df, save_path, title, subtitles):
+    x = df.index.values.tolist()
+    y = df['S']
+    plt.plot(range(len(x)), y)
+    plt.xticks(range(len(x)), x)
 
-    plt.legend(subtitles)
-    plt.xlabel('Threads/Process')
+    plt.xlabel(subtitles)
     plt.ylabel('Speedup')
     plt.title(title)
     plt.savefig(save_path, dpi=200)
     plt.close()
 
 
-def generate_speedup_table(df, seq_value,  col_name):
-    speed_up = pd.DataFrame({col_name: [1], 'time': [seq_value]})
-
+def generate_speedup_table(df_, seq_value,  col_name=None):
+    df = df_.copy(deep=True)
+    if col_name is not None:
+        if col_name == 'all':
+            name = 'process and threads'
+            values = ['1 & 1']
+            df_[name] = df['num_threads'].astype(str) + ' & ' + df['num_process'].astype(str)
+        else:
+            name = col_name
+            values = [1]
+        speed_up = pd.DataFrame({name: values, 'time': [seq_value]})
+    else:
+        speed_up = pd.DataFrame({'time': [seq_value]})
+    
     if col_name != 'seq':
-        speed_up = pd.concat([speed_up, df])
+        if col_name is not None:
+            speed_up = pd.concat([speed_up, df])
         speed_up['time'] = df['time']
 
-    speed_up['S'] = df['time'] / seq_value
+    speed_up['S'] = seq_value / df['time']
     speed_up['S'] = speed_up['S']
-    speed_up.set_index(col_name, inplace=True)
+    if col_name is not None:
+        speed_up.set_index(col_name, inplace=True)
 
     return speed_up
 
@@ -183,15 +199,18 @@ def data_final(dfs, col, title, type='max'):
         omp = dfs[1][col].max()
         mpi = dfs[2][col].max()
         openMPI = dfs[3][col].max()
+        cuda = dfs[4][col].max()
     else:
         omp = dfs[1][col].min()
         mpi = dfs[2][col].min()
         openMPI = dfs[3][col].min()
-    data_speed = pd.DataFrame({ 'Password': ["${1}"],
+        cuda = dfs[4][col].min()
+    data_speed = pd.DataFrame({ 'Password': ["_Hacka1"],
                                 'Sequential': [seq],
                                 'OpenMP': [omp],
                                 'MPI': [mpi],
-                                'OpenMPI':[openMPI]
+                                # 'OpenMPI':[openMPI],
+                                'Cuda': [cuda]
                                 }
                                 )    
     if os.path.exists(path_table):
@@ -202,7 +221,35 @@ def data_final(dfs, col, title, type='max'):
 
     data_speed.to_csv(path_table, sep=";", index=False)
     data_speed.set_index('Password', inplace=True)
-    data_speed.plot(kind='bar', rot=0, title=title, width=0.35)
+    
+    # columns = data_speed.columns.tolist()
+    # step = -0.2
+    # width=0.1
+    # x = np.arange(data_speed.shape[0])
+
+    # colors = ['blue', 'purple', 'orange', 'red', 'green']
+    # y_ticks = []
+    # for v in x:
+    #     y_ticks.extend(data_speed.iloc[0].values)
+    # y_ticks.sort()
+    # for c in range(len(columns)):
+    #     y = data_speed[columns[c]]
+    #     plt.bar(x+step, y, width=width, color=colors[c])
+    #     step += 0.2
+    # plt.xticks(x, data_speed.index.values)
+    # plt.yticks(y_ticks)
+
+    ax = data_speed.plot(kind='bar', rot=0, title=title, width=0.35)
+
+    for p in ax.patches:
+        height = p.get_height()
+        if type == 'max':
+            text = f'{round(height)}x'
+        else:
+            text = f'{round(height)}'
+        ax.text(p.get_x() + p.get_width()/2, height, text, fontsize=10,
+        color='black', ha='center', va='bottom')
+    
     plt.ylabel(title.lower())
     plt.savefig(path_img, dpi=200)
     plt.close()
@@ -213,23 +260,30 @@ omp = pd.read_csv("./${dir}/omp", sep=";")
 mpi = pd.read_csv("./${dir}/mpi", sep=";")
 
 openmpi = pd.read_csv("./${dir}/openmpi", sep=";")
+cuda = pd.read_csv("./${dir}/cuda", sep=";")
+cuda.dropna(axis=1, inplace=True)
 
 seq = pd.read_csv("./${dir}/seq", sep=";")
 seq.dropna(axis=1, inplace=True)
 
 seq_value = seq['time'][0]
 
-subtitles = ['OpenMP', 'MPI']
+subtitles = ['OpenMP', 'MPI', 'OpenMPI', 'Cuda']
 dfs = []
 dfs.append(generate_speedup_table(seq, seq_value, 'seq'))
 dfs.append(generate_speedup_table(omp, seq_value, 'num_threads'))
 dfs.append(generate_speedup_table(mpi, seq_value, 'num_process'))
+dfs.append(generate_speedup_table(openmpi, seq_value, 'all'))
+dfs.append(generate_speedup_table(cuda, seq_value))
 
 generate_time_exec_graph(dfs[1], 'num_threads', "./${dir}/omp_time.png", 'Time execution by threads', 'threads')
 generate_time_exec_graph(dfs[2], 'num_process', "./${dir}/mpi_time.png", 'Time execution by process', 'process')
+generate_time_exec_graph(dfs[3], 'process and threads', "./${dir}/openmpi_time.png", 'Time execution by process and threads', 'process & threads')
 
 generate_speedups_graph(dfs, "./${dir}/speed_up.png", 'Speedups in OpenMP & MPI', subtitles)
-dfs.append(generate_speedup_table(openmpi, seq_value, 'num_process'))
+generate_speedups_graph(dfs[2], "./${dir}/speed_up_mpi.png", 'Speedups in MPI', subtitles[1])
+generate_speedups_graph(dfs[3], "./${dir}/speed_up_openmpi.png", 'Speedups in OpenMPI', subtitles[2])
+dfs.append(generate_speedup_table(cuda, seq_value, 'num_blocks'))
 
 # the row that contains the best speedup gotten, its the same which had the minor time
 data_final(dfs, 'S', 'Speedups', 'max')
@@ -250,7 +304,7 @@ remove_unnecessary_files() {
 
 main(){
     execution $1
-    echo "Plotting graphs..."
+    # echo "Plotting graphs..."
     # plot_script $1
     # remove_unnecessary_files
 }

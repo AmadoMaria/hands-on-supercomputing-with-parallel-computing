@@ -54,7 +54,7 @@ main(){
     }' passwords)
     for p in $pass;
     do
-    echo "Executing brute force  algorithm for $p"
+    echo "Executing brute force algorithm for $p"
     seq_execution $p
     omp_execution $p $2
     mpi_execution $p $3

@@ -1,2 +1,2 @@
-Password;Sequential;OpenMP;MPI;Cuda
-_Hacka1;1.0;3.8857142857142857;8.5;136.0
+Password;Sequential;OpenMP;MPI;OpenMPI;Cuda
+_Hacka1;1.0;3.8857142857142857;8.5;2.9565217391304346;136.0

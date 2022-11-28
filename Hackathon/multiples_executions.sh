@@ -55,11 +55,11 @@ main(){
     for p in $pass;
     do
     echo "Executing brute force algorithm for $p"
-    # cuda_execution $p
+    cuda_execution $p
     mpi_execution $p 30
-    # omp_execution $p 32
+    omp_execution $p 32
     openmpi_execution $p 4 22
-    # seq_execution $p
+    seq_execution $p
     
     done
 }

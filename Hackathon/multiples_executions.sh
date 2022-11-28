@@ -10,7 +10,7 @@ creating_files(){
     echo "password;num_threads;time;" >> ./${dir}/omp
     echo "password;num_process;time;" >> ./${dir}/mpi
     echo "password;num_threads;num_process;time;" >> ./${dir}/openmpi
-    echo "password;num_blocks;time;" >> ./${dir}/cuda
+    echo "password;num_blocks;num_th_per_block;time;" >> ./${dir}/cuda
 }
 
 seq_execution(){
@@ -43,7 +43,7 @@ openmpi_execution(){
 
 cuda_execution(){
     cuda=$(./bruteForceGPU $1 | grep "seconds" | cut -d " " -f 1)
-    echo "${1};32;${cuda};" >> ./${dir}/cuda
+    echo "${1};2560;1024;${cuda};" >> ./${dir}/cuda
 }
 
 main(){

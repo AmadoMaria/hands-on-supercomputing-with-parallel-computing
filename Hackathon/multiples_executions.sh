@@ -63,3 +63,5 @@ main(){
     
     done
 }
+
+main

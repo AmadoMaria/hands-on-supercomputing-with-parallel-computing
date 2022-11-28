@@ -51,8 +51,8 @@ mpi(){
     echo "num_process;time;" >> ./${dir}/mpi
     for j in {2..32..2};
     do
-        mpirun -x MXM_LOG_LEVEL=error -np $j --allow-run-as-root ./bruteForce-mpi $1 2>/dev/null > output_mpi
-        mpi=$(cat output_mpi | grep "seconds" | cut -d " " -f 1)
+        mpirun -x MXM_LOG_LEVEL=error -np $j --allow-run-as-root ./bruteForce-mpi $1 2>/dev/null > output_mpi_
+        mpi=$(cat output_mpi_ | grep "seconds" | cut -d " " -f 1)
         # mpirun -x MXM_LOG_LEVEL=error -np 32 --allow-run-as-root ./bruteForce-mpi senha 2>/dev/null
         # mpi=$(mpirun -np $j ./bruteForce-mpi $1 | grep "seconds" | cut -d " " -f 1)
         echo "${j};${mpi};" >> ./${dir}/mpi
@@ -76,8 +76,8 @@ openmpi(){
         for ((i=$thread; i <= $max_t && i <= 128 && (i*j) < 3840; i*=2))
         do
             echo "Running with $i threads and $j proccess"
-            OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
-            ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
+            OMP_NUM_THREADS=$i mpirun -x MXM_LOG_LEVEL=error -np $j ./bruteForce-openmpi $3 2>/dev/null > output_openmpi_
+            ompi=$(cat output_openmpi_ | grep "seconds" | cut -d " " -f 1)
             echo "${i};${j};${ompi}" >> ./${dir}/openmpi
         done
     done
@@ -122,7 +122,7 @@ cuda(){
 execution(){
     # seq_execution $1
     # omp $1
-    # mpi $1
+    mpi $1
     hybrid $1
     # cuda $1
 }
@@ -182,7 +182,7 @@ def generate_speedup_table(df_, seq_value,  col_name=None):
     speed_up['S'] = seq_value / df['time']
     speed_up['S'] = speed_up['S']
     if col_name is not None:
-        speed_up.set_index(col_name, inplace=True)
+        speed_up.set_index(name, inplace=True)
 
     return speed_up
 

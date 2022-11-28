@@ -53,7 +53,7 @@ void bruteForce(char *pass, int rank, int numberProcess)
     long long partition = ceil(max / numberProcess);
     long long int rest = max % numberProcess;
 
-    if (partition == 0 && rest != 0)
+    if (rest != 0)
     {
         partition += rest;
     }

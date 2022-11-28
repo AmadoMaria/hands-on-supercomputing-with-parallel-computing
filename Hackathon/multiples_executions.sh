@@ -36,7 +36,7 @@ mpi_execution(){
 }
 
 openmpi_execution(){
-    OMP_NUM_THREADS=$2 mpirun -x MXM_LOG_LEVEL=error -np $3 ./bruteForce-openmpi $3 2>/dev/null > output_openmpi
+    OMP_NUM_THREADS=$2 mpirun -x MXM_LOG_LEVEL=error -np $3 ./bruteForce-openmpi $1 2>/dev/null > output_openmpi
     ompi=$(cat output_openmpi | grep "seconds" | cut -d " " -f 1)
     echo "${1};${2};${3};${ompi}" >> ./${dir}/openmpi
 }
@@ -55,11 +55,11 @@ main(){
     for p in $pass;
     do
     echo "Executing brute force algorithm for $p"
-    cuda_execution $p
+    # cuda_execution $p
     mpi_execution $p 30
-    omp_execution $p 32
+    # omp_execution $p 32
     openmpi_execution $p 4 22
-    seq_execution $p
+    # seq_execution $p
     
     done
 }

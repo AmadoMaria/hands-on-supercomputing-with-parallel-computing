@@ -93,6 +93,7 @@ int main(int argc, char **argv)
     int deviceId, numberOfSMs;
     cudaGetDevice(&deviceId);
     cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId);
+    printf("SMs: %d\n", numberOfSMs);
     int number_of_blocks = numberOfSMs * 32;
     int threads_per_block = 1024;
 

@@ -55,7 +55,7 @@ void bruteForce(char *pass, int rank, int numberProcess)
 
     if (partition == 0 && rest != 0)
     {
-        partition = rest;
+        partition += rest;
     }
 
     long long lower_bound = rank * partition;

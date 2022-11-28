@@ -47,7 +47,13 @@ void bruteForce(char *pass, int rank, int numberProcess)
     long long int max = my_pow(base, size);
     char s[MAXIMUM_PASSWORD];
 
-    long long partition = max / numberProcess;
+    long long partition = ceil(max / numberProcess);
+    long long int rest = max % numberProcess;
+
+    if (partition == 0 && rest != 0)
+    {
+        partition = rest;
+    }
 
     long long lower_bound = rank * partition;
     long long upper_bound = (rank + 1) * partition;

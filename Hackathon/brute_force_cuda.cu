@@ -9,7 +9,7 @@
 // 65 to 90 use only capital letters
 // 48 to 57 use only numbers
 
-#define START_CHAR 97
+#define START_CHAR 48
 #define END_CHAR 122
 #define MAXIMUM_PASSWORD 20
 
@@ -93,7 +93,6 @@ int main(int argc, char **argv)
     int deviceId, numberOfSMs;
     cudaGetDevice(&deviceId);
     cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId);
-    printf("SMs: %d\n", numberOfSMs);
     int number_of_blocks = numberOfSMs * 32;
     int threads_per_block = 1024;
 

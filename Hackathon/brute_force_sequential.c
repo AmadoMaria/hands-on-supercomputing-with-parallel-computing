@@ -8,7 +8,7 @@
 // 65 to 90 use only capital letters
 // 48 to 57 use only numbers
 
-#define START_CHAR 97
+#define START_CHAR 48
 #define END_CHAR 122
 #define MAXIMUM_PASSWORD 20
 

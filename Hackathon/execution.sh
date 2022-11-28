@@ -163,13 +163,8 @@ def generate_speedups_graph(df, save_path, title, subtitles):
 def generate_speedup_table(df_, seq_value,  col_name=None):
     df = df_.copy(deep=True)
     if col_name is not None:
-        if col_name == 'all':
-            name = 'process and threads'
-            values = ['1 & 1']
-            df_[name] = df['num_threads'].astype(str) + ' & ' + df['num_process'].astype(str)
-        else:
-            name = col_name
-            values = [1]
+        name = col_name
+        values = [1]
         speed_up = pd.DataFrame({name: values, 'time': [seq_value]})
     else:
         speed_up = pd.DataFrame({'time': [seq_value]})
@@ -185,6 +180,43 @@ def generate_speedup_table(df_, seq_value,  col_name=None):
         speed_up.set_index(name, inplace=True)
 
     return speed_up
+
+def generate_ompi_tables(df):
+    threads = df['num_threads'].unique().tolist()
+    dfs = []
+    for th in threads:
+        data = df.loc[df['num_threads'] == th]
+        data.set_index('num_process', inplace=True)
+        dfs.append(data.drop(columns=['num_threads']))
+    return dfs
+
+def generate_speedup_ompi(dfs, seq_value):
+    for d in range(len(dfs)):
+        dfs[d]['S'] = seq_value / dfs[d]['time'] 
+
+
+def time_exec_graph_ompi(dfs, threads, title, save_path):
+    fig, ax = plt.subplots()
+    values = []
+    for d in range(len(dfs)):
+        dfs[d].plot(kind='line', ax=ax)
+    plt.legend(threads, title='Threads')
+    plt.ylabel('time')
+    plt.title(title)
+    plt.savefig(f'{save_path}', dpi=200)
+    plt.close()
+
+def speedup_graph_ompi(dfs, threads, title, save_path):
+    fig, ax = plt.subplots()
+    values = []
+    for d in range(len(dfs)):
+        data = dfs[d].drop(columns='time')
+        data.plot(kind='line', ax=ax)
+    plt.legend(threads, title='Threads')
+    plt.ylabel('Speedup')
+    plt.title(title)
+    plt.savefig(f'{save_path}', dpi=200)
+    plt.close()
 
 def data_final(dfs, col, title, type='max'):
     path_table = f"./${dir}/{title}_table.csv"
@@ -202,10 +234,10 @@ def data_final(dfs, col, title, type='max'):
         openMPI = dfs[3][col].min()
         cuda = dfs[4][col].min()
     data_speed = pd.DataFrame({ 'Password': ["_Hacka1"],
-                                'Sequential': [seq],
+                                # 'Sequential': [seq],
                                 'OpenMP': [omp],
                                 'MPI': [mpi],
-                                # 'OpenMPI':[openMPI],
+                                'OpenMPI':[openMPI],
                                 'Cuda': [cuda]
                                 }
                                 )    
@@ -213,27 +245,9 @@ def data_final(dfs, col, title, type='max'):
         dt = pd.read_csv(path_table, sep=";")
 
         data_speed = pd.concat([dt, data_speed])
-        print(data_speed.head())
 
     data_speed.to_csv(path_table, sep=";", index=False)
     data_speed.set_index('Password', inplace=True)
-    
-    # columns = data_speed.columns.tolist()
-    # step = -0.2
-    # width=0.1
-    # x = np.arange(data_speed.shape[0])
-
-    # colors = ['blue', 'purple', 'orange', 'red', 'green']
-    # y_ticks = []
-    # for v in x:
-    #     y_ticks.extend(data_speed.iloc[0].values)
-    # y_ticks.sort()
-    # for c in range(len(columns)):
-    #     y = data_speed[columns[c]]
-    #     plt.bar(x+step, y, width=width, color=colors[c])
-    #     step += 0.2
-    # plt.xticks(x, data_speed.index.values)
-    # plt.yticks(y_ticks)
 
     ax = data_speed.plot(kind='bar', rot=0, title=title, width=0.35)
 
@@ -252,15 +266,20 @@ def data_final(dfs, col, title, type='max'):
 
 
 omp = pd.read_csv("./${dir}/omp", sep=";")
+omp.dropna(axis=1, inplace=True)
 
 mpi = pd.read_csv("./${dir}/mpi", sep=";")
+mpi.dropna(axis=1, inplace=True)
 
 openmpi = pd.read_csv("./${dir}/openmpi", sep=";")
+openmpi.dropna(axis=1, inplace=True)
+
 cuda = pd.read_csv("./${dir}/cuda", sep=";")
 cuda.dropna(axis=1, inplace=True)
 
 seq = pd.read_csv("./${dir}/seq", sep=";")
 seq.dropna(axis=1, inplace=True)
+
 
 seq_value = seq['time'][0]
 
@@ -269,22 +288,27 @@ dfs = []
 dfs.append(generate_speedup_table(seq, seq_value, 'seq'))
 dfs.append(generate_speedup_table(omp, seq_value, 'num_threads'))
 dfs.append(generate_speedup_table(mpi, seq_value, 'num_process'))
-dfs.append(generate_speedup_table(openmpi, seq_value, 'all'))
-dfs.append(generate_speedup_table(cuda, seq_value))
 
-generate_time_exec_graph(dfs[1], 'num_threads', "./${dir}/omp_time.png", 'Time execution by threads', 'threads')
+dfs_ompi = generate_ompi_tables(openmpi)
+threads = openmpi['num_threads'].unique().tolist()
+
+generate_time_exec_graph(dfs[1], 'num_threads', "./${dir}omp_time.png", 'Time execution by threads', 'threads')
 generate_time_exec_graph(dfs[2], 'num_process', "./${dir}/mpi_time.png", 'Time execution by process', 'process')
-generate_time_exec_graph(dfs[3], 'process and threads', "./${dir}/openmpi_time.png", 'Time execution by process and threads', 'process & threads')
+time_exec_graph_ompi(dfs_ompi, threads, 'Time execution by process and threads', "./${dir}/openmpi_time.png")
 
-generate_speedups_graph(dfs, "./${dir}/speed_up.png", 'Speedups in OpenMP & MPI', subtitles)
+generate_speedup_ompi(dfs_ompi, seq_value)
+speedup_graph_ompi(dfs_ompi, threads, 'Speedups in OpenMPI', "./${dir}/speed_up_openmpi.png")
+
+generate_speedups_graph(dfs[1], "./${dir}/speed_up_omp.png", 'Speedups in OpenMP', subtitles[0])
 generate_speedups_graph(dfs[2], "./${dir}/speed_up_mpi.png", 'Speedups in MPI', subtitles[1])
-generate_speedups_graph(dfs[3], "./${dir}/speed_up_openmpi.png", 'Speedups in OpenMPI', subtitles[2])
-dfs.append(generate_speedup_table(cuda, seq_value, 'num_blocks'))
 
+openmpi['S'] = seq_value / openmpi['time']
+dfs.append(openmpi[['time', 'S']])
+
+dfs.append(generate_speedup_table(cuda, seq_value))
 # the row that contains the best speedup gotten, its the same which had the minor time
 data_final(dfs, 'S', 'Speedups', 'max')
 data_final(dfs, 'time', 'Time', 'min')
-
 
 EOF
 python plot_script.py
@@ -300,9 +324,9 @@ remove_unnecessary_files() {
 
 main(){
     execution $1
-    # echo "Plotting graphs..."
-    # plot_script $1
-    # remove_unnecessary_files
+    echo "Plotting graphs..."
+    plot_script $1
+    remove_unnecessary_files
 }
 
 main $1

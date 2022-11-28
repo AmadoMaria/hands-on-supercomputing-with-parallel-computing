@@ -56,9 +56,9 @@ main(){
     do
     echo "Executing brute force algorithm for $p"
     seq_execution $p
-    omp_execution $p $2
-    mpi_execution $p $3
-    openmpi_execution $p $2 $3
+    omp_execution $p 32
+    mpi_execution $p 30
+    openmpi_execution $p 4 22
     cuda_execution $p
     
     done
